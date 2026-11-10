@@ -1,0 +1,15 @@
+.DS_Store
+node_modules/
+.env
+.env.*
+.codex/
+.agents/
+output/
+docs/
+REFERENCES.md
+src/seed.js
+src/spiral/provenance.json
+dist/*
+!dist/gallery-inline.js
+!dist/install-cdn.txt
+!dist/configure-page.txt

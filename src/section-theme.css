@@ -1,0 +1,129 @@
+/* Squarespace assigns complete color values to these inheritable section roles. */
+.gc-embed[data-gc-color-source="section"] {
+  --gc-section-surface: var(--siteBackgroundColor, var(--gc-custom-background));
+  --gc-section-body: var(--paragraphMediumColor, var(--gc-custom-ink));
+  --gc-section-heading: var(--headingMediumColor, var(--gc-section-body));
+  --gc-section-action: var(--primaryButtonBackgroundColor, var(--gc-custom-accent));
+  --gc-section-action-text: var(--primaryButtonTextColor, var(--gc-section-surface));
+  --gc-section-nav: var(--list-section-carousel-arrow-background-color, var(--gc-section-action));
+  --gc-section-nav-text: var(--list-section-carousel-arrow-color, var(--gc-section-action-text));
+  --gc-section-card: var(--list-section-simple-card-color, var(--gc-section-surface));
+  --gc-section-card-title: var(--list-section-simple-card-title-color, var(--gc-section-heading));
+  --gc-section-card-body: var(--list-section-simple-card-description-color, var(--gc-section-body));
+  --gc-section-card-link: var(--list-section-simple-card-description-link-color, var(--gc-section-card-title));
+  --gc-section-card-button: var(--list-section-simple-card-button-background-color, var(--gc-section-action));
+  --gc-section-card-button-text: var(--list-section-simple-card-button-text-color, var(--gc-section-action-text));
+  --gc-section-line: color-mix(in srgb, var(--gc-section-body) 32%, transparent);
+  --gc-line: var(--gc-section-line);
+  --gc-spatial-line: var(--gc-section-line);
+}
+
+/* Text outside a painted card follows the Simple List's regular text roles. */
+.user-items-list-section .gc-stage[data-gc-color-source="section"] {
+  --gc-section-heading: var(--list-section-simple-title-color, var(--headingMediumColor, var(--gc-custom-ink)));
+  --gc-section-body: var(--list-section-simple-description-color, var(--paragraphMediumColor, var(--gc-custom-ink)));
+}
+
+/* Keep the section's own color or image visible behind each layout. */
+.gc-stage[data-gc-color-source="section"] :is(.gc-carousel, .gc-preset-showcase) {
+  color: var(--gc-section-body);
+  background: transparent;
+}
+.gc-stage[data-gc-color-source="section"] .gc-card,
+.gc-stage.gc-stack[data-gc-color-source="section"] .gc-stack-slot .gc-card {
+  background: var(--gc-section-card);
+  color: var(--gc-section-card-body);
+}
+.gc-stage[data-gc-color-source="section"] .gc-card-media {
+  background: var(--gc-section-card);
+}
+.gc-stage[data-gc-color-source="section"] .gc-card :is(.gc-card-title, .list-item-content__title) {
+  color: var(--gc-section-card-title);
+}
+.gc-stage[data-gc-color-source="section"] .gc-card :is(.gc-card-description, .list-item-content__description) {
+  color: var(--gc-section-card-body);
+  opacity: 1;
+}
+.gc-stage[data-gc-color-source="section"] .gc-card .list-item-content__description a {
+  color: var(--gc-section-card-link);
+}
+.gc-stage[data-gc-color-source="section"] .gc-card .list-item-content__button {
+  background-color: var(--gc-section-card-button);
+  color: var(--gc-section-card-button-text);
+}
+
+/* Each button and selected tab keeps its Squarespace background/text pair. */
+.gc-stage[data-gc-color-source="section"] :is(.gc-carousel-arrow, .gc-carousel-playback, .gc-spatial-control, .orbit-arrow),
+.gc-stage[data-gc-color-source="section"] .gc-carousel-tab.is-active,
+.gc-stage[data-gc-color-source="section"] .gc-carousel-cursor {
+  background: var(--gc-section-nav);
+  border-color: var(--gc-section-nav);
+  color: var(--gc-section-nav-text);
+}
+.gc-stage[data-gc-color-source="section"] :is(.gc-carousel-arrow, .gc-carousel-playback, .gc-spatial-control, .orbit-arrow):hover {
+  background: var(--gc-section-nav);
+  color: var(--gc-section-nav-text);
+  border-color: currentColor;
+}
+.gc-stage[data-gc-color-source="section"] .gc-carousel-dot {
+  background: color-mix(in srgb, var(--gc-section-body) 26%, var(--gc-section-surface));
+  color: var(--gc-section-body);
+}
+.gc-stage[data-gc-color-source="section"] .gc-preset-showcase .gc-carousel-card {
+  border-color: var(--gc-section-line);
+}
+.gc-stage[data-gc-color-source="section"] .gc-preset-showcase .gc-carousel-card.is-active {
+  border-color: var(--gc-section-nav);
+}
+.gc-stage[data-gc-color-source="section"] .gc-preset-showcase .is-active .gc-card-copy {
+  --gc-section-card-title: var(--gc-section-nav-text);
+  --gc-section-card-body: var(--gc-section-nav-text);
+  --gc-section-card-link: var(--gc-section-nav-text);
+  background: var(--gc-section-nav);
+  color: var(--gc-section-nav-text);
+}
+.gc-stage[data-gc-color-source="section"] .gc-preset-timed .gc-carousel-card {
+  --gc-timed-scrim: var(--gc-section-card);
+}
+.gc-stage.gc-spatial[data-gc-color-source="section"] .gc-card-copy {
+  background: var(--gc-section-card);
+  color: var(--gc-section-card-body);
+}
+.gc-stage.gc-wall[data-gc-color-source="section"] .gc-spatial-canvas::after {
+  background: linear-gradient(0deg, var(--gc-section-surface), transparent 15% 85%, var(--gc-section-surface));
+}
+.gc-stage[data-gc-color-source="section"] :is(.gc-spiral-caption, .gc-ring-label) {
+  color: var(--gc-section-heading);
+}
+
+/* showModal() promotes the element visually while preserving its section ancestry. */
+:is(.gc-dialog,.gc-spiral-dialog)[data-gc-color-source="section"] {
+  --viewer-ink: var(--gc-section-body);
+  --viewer-muted: var(--gc-section-body);
+  background: var(--gc-section-surface);
+  color: var(--gc-section-body);
+  border-color: var(--gc-section-line);
+  scrollbar-color: var(--gc-section-line) var(--gc-section-surface);
+}
+:is(.gc-dialog,.gc-spiral-dialog)[data-gc-color-source="section"] :is(h2, .project-title) {
+  color: var(--gc-section-heading);
+}
+:is(.gc-dialog,.gc-spiral-dialog)[data-gc-color-source="section"] :is(.gc-dialog-count, .project-summary, .project-frame-label) {
+  color: var(--gc-section-body);
+}
+:is(.gc-dialog,.gc-spiral-dialog)[data-gc-color-source="section"] :is(.gc-dialog-media, .project-gallery) {
+  background: var(--gc-section-card);
+}
+.gc-spiral-dialog[data-gc-color-source="section"] .project-topbar {
+  background: var(--gc-section-surface);
+  border-color: var(--gc-section-line);
+}
+:is(.gc-dialog,.gc-spiral-dialog)[data-gc-color-source="section"] :is(.gc-dialog-close, .project-icon-button) {
+  color: var(--gc-section-nav-text);
+  background: var(--gc-section-nav);
+  border-color: var(--gc-section-nav);
+}
+:is(.gc-dialog,.gc-spiral-dialog)[data-gc-color-source="section"] a {
+  color: var(--gc-section-body);
+  text-decoration: underline;
+}

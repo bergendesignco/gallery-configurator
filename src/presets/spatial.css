@@ -1,0 +1,271 @@
+.gc-spatial {
+  position: relative;
+  min-width: 0;
+  isolation: isolate;
+  --gc-spatial-ink: #20241f;
+  --gc-spatial-surface: #f5f6f2;
+  --gc-spatial-line: rgba(32, 36, 31, .18);
+  color: var(--gc-spatial-ink);
+  background: var(--gc-spatial-surface);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.gc-spatial .gc-spatial-canvas {
+  position: relative;
+  width: 100%;
+  height: var(--gc-spatial-height, 620px);
+  min-height: 280px;
+  overflow: hidden;
+  perspective: 1100px;
+  perspective-origin: 50% 50%;
+  touch-action: pan-y;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.gc-spatial .gc-spatial-canvas.is-dragging,
+.gc-spatial .gc-spatial-canvas.is-dragging * { cursor: grabbing !important; }
+
+.gc-spatial .gc-spatial-native-track { box-sizing: border-box; list-style: none; }
+.gc-spatial .gc-spatial-native-track > .gc-spatial-position {
+  position: absolute;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: none;
+  max-height: none;
+  list-style: none;
+}
+
+.gc-spatial .gc-spatial-position {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: 50% 50%;
+  translate: -50% -50%;
+  margin: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.gc-spatial .gc-spatial-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  container-type: inline-size;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: var(--gc-spatial-radius, 18px);
+  overflow: hidden;
+  color: inherit;
+  background: #dddeda;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .08);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transform-style: preserve-3d;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gc-spatial .gc-spatial-card:focus-visible {
+  outline: 3px solid var(--gc-accent, #dfff79);
+  outline-offset: 5px;
+}
+
+.gc-spatial .gc-spatial-card .gc-card-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  aspect-ratio: auto;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.gc-spatial .gc-spatial-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: var(--gc-spatial-fit, cover);
+  border-radius: inherit;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.gc-spatial .gc-spatial-card .gc-card-copy {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+  max-height: 45%;
+  padding: clamp(2px, 2cqi, 7px) clamp(4px, 5cqi, 14px);
+  margin: 0;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .76));
+  pointer-events: none;
+}
+
+.gc-spatial .gc-spatial-card .gc-card-copy:empty { display: none; }
+.gc-spatial .gc-spatial-card .list-item-content__text-wrapper { width: 100%; min-width: 0; }
+.gc-spatial.gc-stage .gc-spatial-card :is(.gc-card-title, .list-item-content__title) {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  color: var(--gc-section-card-title, inherit);
+  /* Native headings retain their Site Styles font. Only the tile label is compact. */
+  font-size: clamp(10px, 7cqi, 16px) !important;
+  line-height: 1.2 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gc-spatial .gc-spatial-nav {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 68px;
+  padding: 0 20px 18px;
+}
+
+.gc-spatial .gc-spatial-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--gc-spatial-line);
+  border-radius: 50%;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .16s, color .16s;
+}
+
+.gc-spatial .gc-spatial-control:hover:not(:disabled) { background: var(--gc-spatial-ink); color: var(--gc-spatial-surface); }
+.gc-spatial .gc-spatial-control:focus-visible { outline: 3px solid var(--gc-accent, #739530); outline-offset: 3px; }
+.gc-spatial .gc-spatial-control:disabled { opacity: .3; cursor: default; }
+.gc-spatial .gc-spatial-count { min-width: 67px; text-align: center; font: 11px/1.2 ui-monospace, SFMono-Regular, monospace; font-variant-numeric: tabular-nums; letter-spacing: .07em; }
+.gc-spatial .gc-spatial-empty { position: absolute; inset: 45% 20px auto; margin: 0; text-align: center; opacity: .65; }
+.gc-spatial .gc-spatial-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.gc-wall {
+  --gc-spatial-ink: #f8f9f3;
+  --gc-spatial-surface: #101310;
+  --gc-spatial-line: rgba(255, 255, 255, .25);
+}
+
+.gc-wall .gc-spatial-canvas { perspective: 1000px; }
+.gc-wall .gc-spatial-canvas::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  background: linear-gradient(0deg, #101310 0%, transparent 15%, transparent 85%, #101310 100%);
+}
+.gc-wall .gc-spatial-card { background: #282d27; box-shadow: 0 12px 28px rgba(0, 0, 0, .3); }
+.gc-wall .gc-spatial-card .gc-card-copy { opacity: 0; transition: opacity .16s; }
+.gc-wall .gc-spatial-card:hover .gc-card-copy,
+.gc-wall .gc-spatial-card:focus-within .gc-card-copy { opacity: 1; }
+.gc-wall .gc-spatial-position { transition: opacity .12s; }
+
+.gc-ring .gc-spatial-canvas { perspective: 1400px; }
+.gc-ring .gc-spatial-card { border-radius: min(var(--gc-spatial-radius, 18px), 8px); box-shadow: 0 3px 7px rgba(20, 25, 18, .12); }
+.gc-ring .gc-ring-center {
+  position: absolute;
+  top: var(--gc-ring-label-y);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--gc-ring-label-width);
+  pointer-events: none;
+  text-align: center;
+  overflow-wrap: anywhere;
+  color: var(--gc-spatial-ink);
+  opacity: .55;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.gc-ring .gc-ring-center.is-below {
+  position: static;
+  transform: none;
+  width: auto;
+  padding: 0 20px 12px;
+}
+.gc-ring .gc-ring-label { display: block; margin-bottom: 10px; font-size: clamp(12px, 1.4vw, 19px); line-height: 1.3; letter-spacing: 0; text-transform: none; }
+.gc-ring .gc-ring-label[hidden] { display: none; }
+
+.gc-angled .gc-spatial-canvas { perspective: 1200px; }
+.gc-angled .gc-spatial-card { box-shadow: 3px 7px 18px rgba(0, 0, 0, .11); }
+.gc-angled .gc-spatial-card .gc-card-copy { opacity: 0; transition: opacity .18s; }
+.gc-angled .gc-spatial-card:hover .gc-card-copy,
+.gc-angled .gc-spatial-card:focus-within .gc-card-copy { opacity: 1; }
+
+.gc-spatial.gc-spatial-reduced .gc-spatial-canvas {
+  display: flex;
+  align-items: center;
+  --gc-reduced-gutter: max(0px, calc((100% - min(var(--gc-spatial-card-width), 72%)) / 2));
+  gap: var(--gc-spatial-gap, 20px);
+  padding: 20px var(--gc-reduced-gutter);
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: hidden;
+  perspective: none;
+  scroll-snap-type: x proximity;
+  touch-action: pan-x pan-y;
+  cursor: auto;
+}
+.gc-spatial-reduced .gc-spatial-canvas[data-gc-native-track] {
+  gap: var(--gc-spatial-gap, 20px) !important;
+  padding-inline: var(--gc-reduced-gutter) !important;
+}
+.gc-spatial.gc-spatial-reduced .gc-spatial-position {
+  position: relative;
+  flex: 0 0 auto;
+  top: auto;
+  left: auto;
+  translate: none;
+  transform: none !important;
+  will-change: auto;
+  scroll-snap-align: center;
+}
+.gc-spatial.gc-spatial-reduced .gc-spatial-card { transform: none !important; }
+.gc-spatial.gc-spatial-reduced .gc-spatial-card .gc-card-copy { display: block; opacity: 1; }
+.gc-spatial.gc-spatial-reduced .gc-spatial-card .gc-card-copy:empty { display: none; }
+.gc-spatial.gc-spatial-reduced .gc-spatial-canvas::after { display: none; }
+.gc-spatial.gc-spatial-reduced * { transition: none !important; }
+
+@media (hover: none) {
+  .gc-wall .gc-spatial-card.is-selected .gc-card-copy,
+  .gc-angled .gc-spatial-card.is-selected .gc-card-copy { opacity: 1; }
+}
+
+@media (max-width: 600px) {
+  .gc-spatial { border-radius: 16px; }
+  .gc-spatial .gc-spatial-canvas { height: min(var(--gc-spatial-height, 620px), 68svh); min-height: 290px; }
+  .gc-spatial .gc-spatial-nav { min-height: 64px; padding-bottom: 14px; gap: 12px; }
+  .gc-wall .gc-spatial-canvas { perspective: 850px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gc-spatial *, .gc-spatial *::before, .gc-spatial *::after { transition: none !important; scroll-behavior: auto !important; }
+}

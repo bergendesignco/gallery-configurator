@@ -1,0 +1,9 @@
+.reference-carousel-shell .orbit-webgl{position:absolute;inset:0;display:none;width:100%;height:100%;touch-action:pinch-zoom}
+.reference-carousel-shell .has-webgl-carousel .orbit-webgl{display:block}
+/* Keep the original buttons in the accessibility tree and the sizing engine.
+   Pointer hit-testing follows the actual curved mesh, not a flat DOM rectangle. */
+.reference-carousel-shell .has-webgl-carousel .orbit-ring{opacity:0;pointer-events:none}
+.reference-carousel-shell .has-webgl-carousel .orbit-card{pointer-events:none!important}
+/* Match the current no-hover-growth behavior while CSS is loading or recovering.
+   Saved CSS comparison routes do not have data-renderer and remain unchanged. */
+.reference-carousel-shell .reference-carousel[data-renderer]:not(.is-moving):not(.is-dragging) .orbit-card.is-centered:hover .orbit-surface{transform:scale(1)}

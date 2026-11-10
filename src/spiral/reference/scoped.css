@@ -1,0 +1,188 @@
+/* Generated selector scope; source geometry declarations are unchanged. */
+/* All component rules are scoped. Text inherits your site's typeface. */
+.reference-carousel-shell .orbit-carousel {
+  --orbit-ink: #f3f4f0;
+  --orbit-muted: #989c9c;
+  --orbit-line: #ffffff30;
+  --orbit-accent: #c6e0ce;
+  --orbit-card-width: clamp(280px, 39vw, 620px);
+  --orbit-hover-scale: 1.08;
+  --orbit-card-radius: 7px;
+  color: var(--orbit-ink);
+  width: 100%;
+  isolation: isolate;
+}
+.reference-carousel-shell .orbit-carousel *, .reference-carousel-shell .orbit-carousel *::before, .reference-carousel-shell .orbit-carousel *::after { box-sizing: border-box; }
+.reference-carousel-shell .orbit-stage {
+  position: relative;
+  width: 100%;
+  height: clamp(370px, 31vw, 520px);
+  overflow: hidden;
+  overflow: clip;
+  touch-action: pan-y pinch-zoom;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.reference-carousel-shell .orbit-stage:focus { outline: none; }
+.reference-carousel-shell .orbit-stage:focus-visible { outline: 1px solid var(--orbit-accent); outline-offset: -8px; border-radius: 12px; }
+.reference-carousel-shell .orbit-ring { position: absolute; inset: 0; }
+.reference-carousel-shell .orbit-card {
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  display: block;
+  width: var(--orbit-card-width);
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  border-radius: var(--orbit-card-radius);
+  background: transparent;
+  color: inherit;
+  cursor: grab;
+  font: inherit;
+  transform-origin: center;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+.reference-carousel-shell .orbit-surface {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background: #292d2e;
+  box-shadow: 0 16px 45px #00000032;
+  transform: scale(1);
+  transition: transform 360ms cubic-bezier(.2,.75,.25,1);
+}
+.reference-carousel-shell .orbit-surface::after { content: ''; position: absolute; inset: 0; border: 1px solid #ffffff1c; border-radius: inherit; background: rgb(0 0 0 / var(--orbit-shade, 0)); pointer-events: none; }
+.reference-carousel-shell .orbit-card img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.reference-carousel-shell .orbit-card:focus { outline: none; }
+.reference-carousel-shell .orbit-card:focus-visible .orbit-surface { outline: 3px solid var(--orbit-accent); outline-offset: 5px; }
+@media (hover: hover) and (pointer: fine) {
+  .reference-carousel-shell .orbit-carousel:not(.is-moving):not(.is-dragging) .orbit-card.is-centered:hover .orbit-surface { transform: scale(var(--orbit-hover-scale)); }
+}
+.reference-carousel-shell .orbit-carousel:not(.is-moving):not(.is-dragging) .orbit-card.is-centered:focus-visible .orbit-surface { transform: scale(var(--orbit-hover-scale)); }
+.reference-carousel-shell .orbit-carousel.is-dragging .orbit-stage, .reference-carousel-shell .orbit-carousel.is-dragging .orbit-card { cursor: grabbing; }
+.reference-carousel-shell .orbit-controls { display: flex; align-items: center; justify-content: center; gap: 36px; padding-inline: 24px; }
+.reference-carousel-shell .orbit-arrow { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; border: 1px solid var(--orbit-line); border-radius: 50%; padding: 0; color: var(--orbit-ink); background: transparent; cursor: pointer; transition: background 180ms, border-color 180ms, transform 180ms; }
+.reference-carousel-shell .orbit-arrow:hover { background: #ffffff0e; border-color: var(--orbit-accent); transform: scale(1.06); }
+.reference-carousel-shell .orbit-arrow:active { transform: scale(.95); }
+.reference-carousel-shell .orbit-arrow:focus-visible, .reference-carousel-shell .orbit-dot:focus-visible { outline: 2px solid var(--orbit-accent); outline-offset: 5px; }
+.reference-carousel-shell .orbit-arrow:disabled { opacity: .35; cursor: default; transform: none; }
+.reference-carousel-shell .orbit-caption { min-width: 200px; text-align: center; }
+.reference-carousel-shell .orbit-title { margin: 0; font-size: 19px; font-weight: 500; line-height: 1.3; letter-spacing: -.02em; }
+.reference-carousel-shell .orbit-description { margin: 7px 0 0; font-size: 12px; line-height: 1.4; color: var(--orbit-muted); }
+.reference-carousel-shell .orbit-pagination { display: flex; align-items: center; justify-content: center; gap: 0; margin-top: 20px; }
+.reference-carousel-shell .orbit-dot { display: grid; place-items: center; width: 24px; height: 28px; padding: 0; border: 0; background: transparent; border-radius: 6px; color: var(--orbit-muted); cursor: pointer; }
+.reference-carousel-shell .orbit-dot::after { content: ''; width: 4px; height: 4px; background: currentColor; opacity: .5; border-radius: 50%; transition: opacity 180ms, transform 180ms; }
+.reference-carousel-shell .orbit-dot[aria-current="true"] { color: var(--orbit-accent); }
+.reference-carousel-shell .orbit-dot[aria-current="true"]::after { opacity: 1; transform: scale(1.6); }
+.reference-carousel-shell .orbit-dot:hover::after { opacity: 1; transform: scale(1.4); }
+.reference-carousel-shell .orbit-hint { margin: 12px 24px 0; text-align: center; color: var(--orbit-muted); font-size: 11px; line-height: 1.6; }
+.reference-carousel-shell .orbit-hint span { padding-inline: 8px; }
+.reference-carousel-shell .orbit-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (min-width: 1700px) { .reference-carousel-shell .orbit-stage { max-width: 1900px; margin-inline: auto; } }
+@media (max-width: 700px) {
+  .reference-carousel-shell .orbit-carousel { --orbit-card-width: 76vw; --orbit-card-radius: 5px; }
+  .reference-carousel-shell .orbit-stage { height: clamp(325px, 68vw, 440px); }
+  .reference-carousel-shell .orbit-controls { gap: 18px; }
+  .reference-carousel-shell .orbit-caption { min-width: 0; width: 170px; }
+  .reference-carousel-shell .orbit-title { font-size: 17px; }
+  .reference-carousel-shell .orbit-description { font-size: 11px; }
+  .reference-carousel-shell .orbit-hint { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reference-carousel-shell .orbit-carousel *, .reference-carousel-shell .orbit-carousel *::before, .reference-carousel-shell .orbit-carousel *::after { transition-duration: 0ms !important; }
+}
+@media (forced-colors: active) {
+  .reference-carousel-shell .orbit-arrow { border-color: ButtonText; }
+  .reference-carousel-shell .orbit-dot::after { background: ButtonText; }
+  .reference-carousel-shell .orbit-dot[aria-current="true"] { outline: 1px solid Highlight; }
+}
+
+/* Version two: a tall, open helix. Shared component rules come from ../carousel.css. */
+.reference-carousel-shell .spiral-carousel {
+  --orbit-card-width: clamp(180px, 18vw, 240px);
+  --orbit-hover-scale: 1.08;
+}
+.reference-carousel-shell .spiral-carousel .orbit-stage {
+  height: max(500px, calc(100svh - 210px));
+  max-height: 830px;
+  /* Only the edges of the open spiral fade. The ends never form a ring. */
+  mask-image: linear-gradient(transparent, #000 5%, #000 95%, transparent);
+}
+.reference-carousel-shell .spiral-carousel .orbit-card { top: 50%; }
+.reference-carousel-shell .spiral-carousel .orbit-controls { margin-top: 1px; }
+.reference-carousel-shell .spiral-carousel .orbit-title { font-size: 17px; }
+.reference-carousel-shell .spiral-carousel .orbit-description { font-size: 11px; margin-top: 5px; }
+.reference-carousel-shell .spiral-carousel .orbit-pagination { margin-top: 10px; }
+.reference-carousel-shell .spiral-carousel .orbit-hint { margin-top: 3px; }
+.reference-carousel-shell body .demo-header { padding-block: 19px; }
+.reference-carousel-shell .demo-header a { color: inherit; text-decoration: none; text-underline-offset: 4px; }
+.reference-carousel-shell .demo-header a:hover { color: #f3f4f0; text-decoration: underline; }
+.reference-carousel-shell .demo-header a:focus-visible { outline: 2px solid #c6e0ce; outline-offset: 5px; }
+.reference-carousel-shell .demo-version { color: #c6e0ce; }
+.reference-carousel-shell body .demo-footer { margin-top: 20px; padding-block: 15px; }
+@media (max-width: 700px) {
+  .reference-carousel-shell .spiral-carousel { --orbit-card-width: clamp(128px, 39vw, 196px); }
+  .reference-carousel-shell .spiral-carousel .orbit-stage { height: max(520px, calc(100svh - 230px)); }
+  .reference-carousel-shell .spiral-carousel .orbit-hint { font-size: 10px; }
+  .reference-carousel-shell .spiral-carousel .orbit-hint span { padding-inline: 3px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reference-carousel-shell .spiral-carousel .orbit-stage { mask-image: none; }
+}
+
+/* The spiral owns one-finger swipes in both directions; pinch zoom stays native. */
+.reference-carousel-shell .spiral-carousel .orbit-stage { touch-action: pinch-zoom; -webkit-touch-callout: none; }
+.reference-carousel-shell .spiral-carousel .orbit-controls { gap: 18px; margin-top: 4px; }
+.reference-carousel-shell .spiral-carousel .orbit-card { cursor: pointer; }
+.reference-carousel-shell .spiral-carousel.is-dragging .orbit-card { cursor: grabbing; }
+.reference-carousel-shell .spiral-carousel .orbit-pagination { margin-top: 8px; }
+
+/* Double-sided panels rotate fully around the axis; rear screenshots show through in reverse. */
+.reference-carousel-shell .spiral-carousel .orbit-card,
+.reference-carousel-shell .spiral-carousel .orbit-surface { backface-visibility: visible; -webkit-backface-visibility: visible; }
+
+/* Curved screenshot panels: all strips participate in one shared 3D scene. */
+.reference-carousel-shell .spiral-carousel .orbit-stage { perspective-origin: 50% 50%; }
+.reference-carousel-shell .spiral-carousel .orbit-ring,
+.reference-carousel-shell .spiral-carousel .orbit-card.is-curved,
+.reference-carousel-shell .spiral-carousel .orbit-card.is-curved .orbit-surface { transform-style: preserve-3d; }
+.reference-carousel-shell .spiral-carousel .orbit-card.is-curved { appearance: none; -webkit-appearance: none; overflow: visible; }
+.reference-carousel-shell .spiral-carousel .orbit-card.is-curved .orbit-surface {
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+.reference-carousel-shell .spiral-carousel .orbit-card.is-curved .orbit-surface > img { visibility: hidden; }
+.reference-carousel-shell .spiral-carousel .orbit-card.is-curved .orbit-surface::after { content: none; }
+.reference-carousel-shell .spiral-carousel .orbit-strip {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  display: block;
+  height: 100%;
+  background-repeat: no-repeat;
+  transform-origin: center;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  opacity: var(--orbit-fade, 1);
+}
+.reference-carousel-shell .spiral-carousel .orbit-strip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / var(--orbit-shade, 0));
+  border-block: 1px solid #ffffff16;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.reference-carousel-shell .spiral-carousel .orbit-strip:first-of-type { border-radius: var(--orbit-card-radius) 0 0 var(--orbit-card-radius); }
+.reference-carousel-shell .spiral-carousel .orbit-strip:last-of-type { border-radius: 0 var(--orbit-card-radius) var(--orbit-card-radius) 0; }
+

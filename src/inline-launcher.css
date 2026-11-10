@@ -1,0 +1,8 @@
+.gc-config-position{position:relative!important}
+button.gc-config-launch{all:unset;box-sizing:border-box;position:absolute;inset:12px 12px auto auto;z-index:12;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:35px;padding:0 13px;border:1px solid #ffffff4a;border-radius:999px;background:#172331;color:white;box-shadow:0 2px 9px #12203233;font:550 12px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.01em;cursor:pointer;touch-action:manipulation}
+.gc-config-launch svg{height:16px;width:16px}
+button.gc-config-launch:hover,button.gc-config-launch[aria-expanded=true]{background:#2547b3}
+button.gc-config-launch:focus-visible{outline:3px solid #6281ff;outline-offset:3px}
+button.gc-config-launch:disabled{opacity:.65;cursor:default}
+.sqs-edit-mode-active .gc-config-launch,.sqs-edit-mode-active [data-gc-author-panel]{display:none!important}
+@media(max-width:700px){button.gc-config-launch{min-height:40px;inset:8px 8px auto auto}}

@@ -1,0 +1,22 @@
+{
+  "name": "gallery-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs --cdn-only",
+    "dev": "node scripts/dev.mjs",
+    "verify": "node scripts/verify.mjs --cdn-only",
+    "test": "npm run verify",
+    "build:standalone": "node scripts/build.mjs",
+    "verify:standalone": "node scripts/verify.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  },
+  "description": "Inline layout configurator for native Squarespace List Sections and Gallery Blocks",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bergendesignco/gallery-configurator.git"
+  }
+}
