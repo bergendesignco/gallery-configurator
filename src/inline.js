@@ -110,7 +110,11 @@ export function startInline() {
     const {source}=record;
     if(!record.mounted) source.items=readSource(source.root,source.type);
     if (!source.items.length) return;
-    const initial = record.options || record.installed || settings('arc-tabs');
+    let initial = record.options || record.installed || settings('arc-tabs',source.type==='gallery'?{galleryWidth:'source'}:{});
+    if(source.type==='gallery' && initial.preset==='stack'){
+      initial=settings('arc-tabs',{galleryWidth:'source'});
+      apply(record,initial);
+    }
     if (!record.mounted && !apply(record,initial)) {
       record.button.textContent='No supported layout here';return;
     }
@@ -120,9 +124,9 @@ export function startInline() {
     };
     panel=createPanel({source,options:{...record.options},onClose:()=>close(),onRestore:()=>restore(record),
       onPreset:id=>{
-        if (!layouts.has(id)) return;
+        if (!layouts.has(id)||(source.type==='gallery'&&id==='stack')) return;
         record.presets.set(record.options.preset,{...record.options});
-        change(record.presets.get(id)||settings(id));
+        change({...(record.presets.get(id)||settings(id)),galleryWidth:record.options.galleryWidth,galleryHeight:record.options.galleryHeight});
         panel.update({source,options:{...record.options}});
       },
       onOption:(key,value)=>{
@@ -134,7 +138,7 @@ export function startInline() {
       getStyle:()=>copyStyle(record.options),
       applyStyle:text=>{
         const next=readStyle(text,record.options);
-        if (!next) return false;
+        if (!next || (source.type==='gallery'&&next.preset==='stack')) return false;
         record.presets.set(record.options.preset,{...record.options});
         change(next);
         panel.update({source,options:record.options});

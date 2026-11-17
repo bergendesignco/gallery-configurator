@@ -1,13 +1,7 @@
 import {fixedSlotPose} from './FixedSlotGeometry.js';
 export {fixedSlotPose};
 export const projectIndex=(index,count)=>((index%count)+count)%count;
-export function responsiveSlots({stageWidth,stageHeight,spiralWidthPercent,cardWidth,aspect,rise,riseUnit}) {
- const radius=Math.max(1,stageWidth*spiralWidthPercent/200);
- const slotWidth=cardWidth;
- return {radius,slotWidth,slotHeight:slotWidth/aspect,aspect,
-  pitch:riseUnit==='percent'?stageHeight*rise/100:rise,
-  radiansPerSlide:slotWidth/radius,cardsPerTurn:Math.PI*2*radius/slotWidth};
-}
+export {responsiveSlots} from './fit-slots.js';
 // Conservative pool bounds include the furthest (smallest projected) rear cards,
 // half a card above/below the viewport, and two slots for a seamless handoff.
 export function responsiveRange(position,slots,stageHeight) {

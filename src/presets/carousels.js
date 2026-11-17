@@ -478,13 +478,16 @@ export function mountCarousel({ host, items = [], initialIndex = 0, options = {}
   });
   listen(stage, 'pointermove', event => {
     const bounds = stage.getBoundingClientRect();
-    cursor.style.left = `${event.clientX - bounds.left}px`;
-    cursor.style.top = `${event.clientY - bounds.top}px`;
+    const visualScale = bounds.width / Math.max(1, stage.clientWidth) || 1;
+    const localX = (event.clientX - bounds.left) / visualScale;
+    const localY = (event.clientY - bounds.top) / visualScale;
+    cursor.style.left = `${localX}px`;
+    cursor.style.top = `${localY}px`;
     if (event.pointerType === 'mouse') stage.classList.add('has-pointer');
     if (!drag) {
       if (preset === 'showcase' && !reduced) {
-        hoverTiltX = clamp((event.clientX - bounds.left - width / 2) / cardWidth, -1, 1) * 4;
-        hoverTiltY = clamp((event.clientY - bounds.top - height / 2) / height, -0.5, 0.5) * -5;
+        hoverTiltX = clamp((localX - width / 2) / cardWidth, -1, 1) * 4;
+        hoverTiltY = clamp((localY - height / 2) / height, -0.5, 0.5) * -5;
         render();
       }
       return;
@@ -504,11 +507,11 @@ export function mountCarousel({ host, items = [], initialIndex = 0, options = {}
     drag.moved = true;
     const now = performance.now();
     const dt = Math.max(8, now - drag.lastTime);
-    const velocity = -(event.clientX - drag.lastX) / dragStep / dt;
+    const velocity = -(event.clientX - drag.lastX) / visualScale / dragStep / dt;
     drag.velocity = drag.velocity * 0.45 + velocity * 0.55;
     drag.lastX = event.clientX;
     drag.lastTime = now;
-    position = drag.start - dx / dragStep;
+    position = drag.start - dx / visualScale / dragStep;
     target = position;
     render();
   }, { passive: false });

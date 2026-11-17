@@ -111,3 +111,19 @@ try {
   console.error(`Verification failed: ${error.message}`);
   process.exitCode = 1;
 }
+
+// Narrow blocks must not turn a single Spiral card around most of the cylinder.
+const {responsiveSlots} = await import('../src/spiral/fit-slots.js');
+for (const stageWidth of [160, 320, 583, 1440]) {
+  for (const stageHeight of [80, 393, 680]) {
+    for (const cardWidth of [80, 280, 720]) {
+      for (const aspect of [16/9, 1, 9/16]) {
+        const slots = responsiveSlots({stageWidth,stageHeight,cardWidth,aspect,spiralWidthPercent:87,rise:52,riseUnit:'px'});
+        assert.ok(slots.radiansPerSlide <= Math.PI/3 + 1e-9, 'Spiral curvature must fit its container');
+        assert.ok(slots.slotHeight <= stageHeight*.4 + 1e-9, 'Spiral card height must fit its stage');
+        assert.ok(slots.pitch*slots.cardsPerTurn >= slots.slotHeight*1.25-1e-9, 'Spiral turns must clear the preceding card');
+      }
+    }
+  }
+}
+console.log('Verified Spiral geometry at 108 container/width/aspect combinations.');

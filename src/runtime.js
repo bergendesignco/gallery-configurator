@@ -5,6 +5,7 @@ import {mountSpiral} from './presets/spiral-lazy.js';
 import {spiralDefaults,spiralControls} from './presets/spiral-settings.js';
 import {createImage,loadNativeImage,cleanHTML,safeLink,readSource,sourcePlacement} from './sources.js';
 import {createSimpleList} from './simple-list.js';
+import {fitBlock} from './block-fit.js';
 import {fitViewport} from './viewport-footprint.js';
 import {appearanceDefaults,styleAppearance} from './appearance.js';
 import {applyGalleryTheme,attachGalleryDialog} from './section-theme.js';
@@ -29,7 +30,7 @@ export const presets=[
 {id:'spiral',name:'Spiral carousel',category:'Rotate',hint:'Drag to rotate · Click the active image to open',width:280},
 {id:'ring',name:'Interactive ring',category:'Hover',hint:'Move over the images · Drag to rotate',width:150},
 {id:'angled',name:'Angled gallery',category:'Perspective',hint:'Drag to explore · Hover to bring an image forward',width:240}];
-export const defaults={...appearanceDefaults,colorSource:'custom',typeSource:'preset',preset:'arc-tabs',galleryWidth:'full',navigation:'auto',cardWidth:360,gap:28,mobileCardWidth:null,mobileGap:null,radius:16,depth:48,stageHeight:0,duration:5,autoplay:false,showTitles:true,fit:'cover',clickAction:'preview',background:'#edf0f4',ink:'#1b2838',accent:'#345bf2',reducedMotion:false};
+export const defaults={...appearanceDefaults,colorSource:'custom',typeSource:'preset',preset:'arc-tabs',galleryWidth:'full',galleryHeight:'source',navigation:'auto',cardWidth:360,gap:28,mobileCardWidth:null,mobileGap:null,radius:16,depth:48,stageHeight:0,duration:5,autoplay:false,showTitles:true,fit:'cover',clickAction:'preview',background:'#edf0f4',ink:'#1b2838',accent:'#345bf2',reducedMotion:false};
 export function usesMinimumHeight(preset) {
  return ['infinite','arc','arc-tabs','showcase','timed'].includes(preset);
 }
@@ -257,7 +258,7 @@ export function embed({selector,type='gallery',options={}}={}){
  const host=document.createElement('div'),slot=document.createElement('div');
  host.className='gc-embed';slot.className='gc-viewport-slot';slot.append(host);
  let current={...mergeOptions(defaults,options),previewScroll:false};
- let gallery=null,restoreScroll=null,restoreViewport=null,stopEdit=null,destroyed=false,hidden=[];
+ let gallery=null,restoreScroll=null,restoreViewport=null,restoreBlock=null,stopEdit=null,destroyed=false,hidden=[];
  let listWidth=null;
  function syncWidth(){
   if(current.galleryWidth==='source'){
@@ -276,6 +277,11 @@ export function embed({selector,type='gallery',options={}}={}){
    restoreViewport=fitViewport(slot,host,source,type);
   }
  }
+ function blockBound(){return type==='gallery' && current.preset!=='stack' && current.galleryHeight!=='custom' && !!source.closest('.fluid-engine > .fe-block');}
+ function syncBlock(){
+  if(blockBound()){if(!restoreBlock)restoreBlock=fitBlock(slot,host,source);}
+  else {restoreBlock?.();restoreBlock=null;}
+ }
  function syncScroll(preset){
   if(preset==='stack'){
    if(!restoreScroll)restoreScroll=releaseStickyBlockers(host,source);
@@ -285,6 +291,7 @@ export function embed({selector,type='gallery',options={}}={}){
   try{gallery?.destroy();}
   finally{
    gallery=null;
+   restoreBlock?.();restoreBlock=null;
    syncScroll(null);
    restoreViewport?.();restoreViewport=null;
    hidden.forEach(node=>node.classList.remove('gc-native-items-hidden'));
@@ -307,6 +314,7 @@ export function embed({selector,type='gallery',options={}}={}){
    hidden=live.originals;
    hidden.forEach(node=>node.classList.add('gc-native-items-hidden'));
   }
+  syncBlock();
   syncScroll(current.preset);
   gallery=mountGallery(host,items,current,list);
  }
@@ -317,7 +325,7 @@ export function embed({selector,type='gallery',options={}}={}){
   finally{stopEdit?.();inlineRegistry.mounts.delete(source);}
  }
  const instance={
-  update(next={}){if(destroyed)return;const width=current.galleryWidth;current={...mergeOptions(current,next),previewScroll:false};if(gallery){if(current.galleryWidth!==width)syncWidth();syncScroll(current.preset);gallery.update(current);}},
+  update(next={}){if(destroyed)return;const width=current.galleryWidth;current={...mergeOptions(current,next),previewScroll:false};if(gallery){if(current.galleryWidth!==width)syncWidth();syncBlock();syncScroll(current.preset);gallery.update(current);}},
   goTo(i){gallery?.goTo(i);},
   setPlaying(value){current.autoplay=value;gallery?.setPlaying(value);},
   getOptions(){return {...current};},getActive(){return gallery?.getActive()??0;},destroy

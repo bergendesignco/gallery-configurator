@@ -24,7 +24,7 @@ function range(key, label, min, max, step, unit = '') {
   return { key, label, type: 'range', min, max, step, unit };
 }
 
-export function controlGroups(options) {
+export function controlGroups(options, sourceType) {
   const preset = options.preset;
   const minimum = usesMinimumHeight(preset);
   const geometry = [
@@ -34,6 +34,10 @@ export function controlGroups(options) {
     range('cardWidth', 'Card width', 80, preset === 'timed' ? 960 : preset === 'spiral' ? 720 : 560, 1, 'px'),
     range('stageHeight', minimum ? 'Minimum gallery height' : 'Gallery height', minimum ? 0 : 300, 1200, 1, 'px'),
   ];
+  if(sourceType==='gallery'){
+    geometry.splice(1,0,{key:'galleryHeight',label:'Height sizing',type:'select',choices:[{value:'source',label:'Follow block'},{value:'custom',label:'Custom height'}]});
+    if(options.galleryHeight!=='custom')geometry.splice(geometry.findIndex(f=>f.key==='stageHeight'),1);
+  }
   if (preset === 'spiral') {
     geometry.push(...spiralControls);
   } else {
@@ -125,6 +129,10 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   const groups = new Map();
   const element = node('div');
   element.setAttribute('data-gc-author-panel', '');
+  element.setAttribute('data-lenis-prevent','');
+  // Keep site-level smooth-scroll handlers out of the settings panel.
+  element.addEventListener('wheel',event=>event.stopPropagation(),{passive:true});
+  element.addEventListener('touchmove',event=>event.stopPropagation(),{passive:true});
   const shadow = element.attachShadow({ mode: 'open' });
   const style = node('style');
   style.textContent = panelCSS;
@@ -148,10 +156,12 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   const controls = node('div', 'controls');
   controls.id = 'gc-author-controls';
   const scroll = node('div', 'scroll');
+  scroll.tabIndex = 0;
+  scroll.setAttribute('aria-label','Layout settings');
   const presetRow = node('label', 'preset-row');
   const presetSelect = node('select', 'preset-select');
   presetSelect.setAttribute('aria-label', 'Layout');
-  for (const preset of presets) {
+  for (const preset of presets.filter(preset=>source.type!=='gallery'||preset.id!=='stack')) {
     const option = node('option', '', preset.name);
     option.value = preset.id;
     presetSelect.append(option);
@@ -253,6 +263,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     } else {
       onOption(key, value);
     }
+    if (key === 'galleryHeight') buildGroups();
     if (key === 'colorSource') fields.forEach(syncField);
     else syncField(fields.get(key));
     for (const field of fields.values()) if (field.definition.inherits === key) syncField(field);
@@ -308,7 +319,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     fields.clear();
     groups.clear();
     groupArea.replaceChildren();
-    for (const group of controlGroups(current)) {
+    for (const group of controlGroups(current, currentSource.type)) {
       const details = node('details', 'group');
       details.open = openGroups.get(group.title) ?? group.title === 'Size & spacing';
       const summary = node('summary', '', group.title);

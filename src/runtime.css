@@ -73,3 +73,13 @@
 .gc-stage button.gc-transport > .gc-icon-pause,
 .gc-stage button.gc-transport[data-paused="false"] > .gc-icon-play { display: none; }
 .gc-stage button.gc-transport[data-paused="false"] > .gc-icon-pause { display: block; }
+
+/* Bound Fluid Engine galleries to the dimensions chosen in the page editor. */
+.gc-block-bound{height:100%!important;min-height:0!important}
+.gc-block-bound>.sqs-block-content{position:relative!important;height:100%!important;min-height:0!important}
+.gc-block-slot{position:absolute!important;inset:0;height:100%;min-height:0}
+.gc-block-slot>.gc-block-fit{height:100%!important;min-height:0;overflow:auto;overscroll-behavior:contain}
+.gc-block-fit .orbit-stage{height:var(--gc-block-stage-height,100%)!important;min-height:0!important}
+.gc-block-fit .gc-spatial-canvas{height:var(--gc-block-stage-height,100%)!important;min-height:0!important}
+.gc-block-stage-window{position:relative;overflow:clip}
+.gc-block-stage-window>.gc-carousel-stage{position:absolute;left:50%;top:var(--gc-block-top,0px);transform:translateX(-50%) scale(var(--gc-block-scale,1));transform-origin:top center}

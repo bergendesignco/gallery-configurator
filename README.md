@@ -7,7 +7,7 @@ Preview advanced layouts directly on native Squarespace Simple List Sections and
 Paste these two lines into **Page Settings → Advanced → Page Header Code Injection**, save, and reload the page outside Squarespace Edit mode.
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.1.1/dist/gallery-inline.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.2.0/dist/gallery-inline.js"></script>
 <script type="application/json" data-gallery-configure>{}</script>
 ```
 
@@ -57,3 +57,15 @@ npm run verify
 The release asset is `dist/gallery-inline.js`. CSS is included in the module. `dist/install-cdn.txt` contains the script tag and `dist/configure-page.txt` contains the configure marker.
 
 The local standalone workbench can also be built with `npm run build:standalone` and checked with `npm run verify:standalone` when a local `src/seed.js` demo dataset is available.
+
+
+### v0.2.0: block fitting and responsive Spiral
+
+- Fluid Engine Gallery Blocks default to their own width and height. Resize the block in Squarespace to resize the gallery. Navigation and captions are included in the height budget.
+- Height sizing → Custom height restores content-driven sizing and the gallery-height control. Classic Gallery Blocks without a Fluid Engine grid remain content-driven.
+- Placement choices persist when switching presets. List Sections keep their existing content-driven height.
+- Stacking cards is available only for List Sections, using page scroll. It is excluded from Gallery Block choices. Legacy saved block stacking configurations retain their previous page-scroll behavior until reconfigured.
+- Spiral limits card curvature, height, and vertical overlap using the actual available stage size. Pixel card width is a preferred maximum, not an unconditional rendered width.
+- The settings panel has a persistent scrollbar, keyboard-focusable scroll area, and wheel/touch event isolation from page-level smooth scrolling.
+
+Existing explicit full-page width settings are preserved. Existing Fluid Engine gallery configurations now follow block height by default; choose Custom height to opt out.

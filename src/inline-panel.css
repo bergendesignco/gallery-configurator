@@ -101,3 +101,10 @@ textarea { display: block; width: 100%; height: 80px; min-height: 48px; max-heig
   .panel { max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); }
   textarea { max-height: 54px; }
 }
+
+/* A real scroll container, isolated from page smooth scrolling. */
+.controls{flex:1 1 auto;overflow:hidden}
+.scroll{flex:1 1 auto;overflow-y:scroll;scrollbar-gutter:stable;touch-action:pan-y;scrollbar-width:auto;padding-bottom:16px}
+.scroll::-webkit-scrollbar{width:10px}
+.scroll::-webkit-scrollbar-thumb{background:#9ba28f;border:2px solid #fafaf7;border-radius:8px}
+.scroll::-webkit-scrollbar-track{background:#eef0e8}
