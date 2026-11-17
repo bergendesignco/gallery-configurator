@@ -79,7 +79,7 @@ function pageCode(source, options) {
 
 export function startInline() {
   if (window.GalleryStudioInline?.version === 1) return window.GalleryStudioInline;
-  const author = !!document.querySelector('script[type="application/json"][data-gallery-configure]');
+  const author = window.self !== window.top && window.frameElement?.id === 'sqs-site-frame' && !!document.querySelector('script[type="application/json"][data-gallery-configure]');
   const snippets = document.querySelectorAll('script[type="application/json"][data-gallery-layout]');
   if (!author && !snippets.length) return null;
   const sources = discoverSources();

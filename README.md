@@ -7,7 +7,7 @@ Preview advanced layouts directly on native Squarespace Simple List Sections and
 Paste these two lines into **Page Settings → Advanced → Page Header Code Injection**, save, and reload the page outside Squarespace Edit mode.
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.3.0/dist/gallery-inline.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.3.1/dist/gallery-inline.js"></script>
 <script type="application/json" data-gallery-configure>{}</script>
 ```
 
@@ -17,7 +17,7 @@ Your normal list or gallery appears with a **Configure layout** button. Click it
 
 While signed in to your Squarespace site, click **Save to page**. The configurator reads the current page header, updates this source's `data-gallery-layout` configuration, and verifies the saved header. Other galleries, schema, GSAP code, and unrelated page settings are retained. The installed CDN script remains required.
 
-Save leaves the configure marker in place so you can continue editing. Remove that marker when finished if you do not want visitors to see the configurator. Visitors cannot save without an authenticated Squarespace session and editing permissions.
+Save leaves the configure marker in place so you can continue editing. The Configure button appears inside the Squarespace editor preview frame. Visitors see the saved gallery.
 
 **Copy code** and **View code** remain available for manual installation. **Download header backup** appears after a save attempt has read the original header; download it before closing the panel if you want to keep it. The backup is the header from before that attempt, not a full site backup.
 
@@ -31,7 +31,7 @@ Alternatively, put the CDN script once in **site-wide Footer Code Injection**. T
 
 If upgrading from the large inline installer, replace that installer with the CDN script. Use one installer per page. Pages without either Gallery Configurator marker keep their normal content.
 
-The URL is pinned to `v0.3.0`. Update the version in your script URL when you choose to install a newer release.
+The URL is pinned to `v0.3.1`. Update the version in your script URL when you choose to install a newer release.
 
 ## Controls
 

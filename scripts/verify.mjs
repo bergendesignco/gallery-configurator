@@ -50,17 +50,20 @@ function checkUnmarkedPage(code) {
   runPageProbe(probe, 'Inline footer must skip an unmarked page');
 }
 
-function checkAuthorPage(code, markerInBody = false) {
+function checkAuthorPage(code, markerInBody = false, editor = true, saved = false) {
   const probe = `globalThis.window = globalThis;
+    globalThis.self = window;
+    globalThis.top = ${editor} ? {} : window;
+    globalThis.frameElement = ${editor} ? {id:'sqs-site-frame'} : null;
     globalThis.document = {
       readyState: 'complete',
       querySelector(selector) {
         if (${markerInBody} && selector.includes('head ')) return null;
         return selector.includes('data-gallery-configure') ? {} : null;
       },
-      querySelectorAll() { return []; }
+      querySelectorAll(selector) { return ${saved} && selector.includes('data-gallery-layout') ? [{textContent:'{}'}] : []; }
     };\n${code}\n
-    if (!window.GalleryStudioInline || window.SpiralCarousel) {
+    if (Boolean(window.GalleryStudioInline) !== ${editor || saved} || window.SpiralCarousel) {
       throw Error('Author discovery must initialize independently of the spiral');
     }`;
   runPageProbe(probe, `Author discovery with a ${markerInBody ? 'body' : 'head'} marker must run without Spiral CDN imports`);
@@ -106,6 +109,8 @@ try {
   checkUnmarkedPage(footerCode);
   checkAuthorPage(footerCode);
   checkAuthorPage(footerCode, true);
+  checkAuthorPage(footerCode, false, false);
+  checkAuthorPage(footerCode, false, false, true);
   console.log('Verified inline module, marker-free and author pages without CDN imports, authoring marker, and exact hidden transfer payload.');
 } catch (error) {
   console.error(`Verification failed: ${error.message}`);
