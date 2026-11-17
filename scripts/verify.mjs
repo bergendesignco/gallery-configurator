@@ -50,17 +50,20 @@ function checkUnmarkedPage(code) {
   runPageProbe(probe, 'Inline footer must skip an unmarked page');
 }
 
-function checkAuthorPage(code) {
+function checkAuthorPage(code, markerInBody = false) {
   const probe = `globalThis.window = globalThis;
     globalThis.document = {
       readyState: 'complete',
-      querySelector(selector) { return selector.includes('data-gallery-configure') ? {} : null; },
+      querySelector(selector) {
+        if (${markerInBody} && selector.includes('head ')) return null;
+        return selector.includes('data-gallery-configure') ? {} : null;
+      },
       querySelectorAll() { return []; }
     };\n${code}\n
     if (!window.GalleryStudioInline || window.SpiralCarousel) {
       throw Error('Author discovery must initialize independently of the spiral');
     }`;
-  runPageProbe(probe, 'Author discovery must run without Spiral CDN imports');
+  runPageProbe(probe, `Author discovery with a ${markerInBody ? 'body' : 'head'} marker must run without Spiral CDN imports`);
 }
 
 function checkTransfer(page, installer) {
@@ -102,6 +105,7 @@ try {
   ]) checkSyntax(name, code);
   checkUnmarkedPage(footerCode);
   checkAuthorPage(footerCode);
+  checkAuthorPage(footerCode, true);
   console.log('Verified inline module, marker-free and author pages without CDN imports, authoring marker, and exact hidden transfer payload.');
 } catch (error) {
   console.error(`Verification failed: ${error.message}`);

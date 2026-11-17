@@ -52,7 +52,7 @@ const lazyDependencies = {
   },
 };
 const pageMarkers = ['data-gallery-configure', 'data-gallery-layout']
-  .map(attribute => `head script[type="application/json"][${attribute}]`).join(', ');
+  .map(attribute => `script[type="application/json"][${attribute}]`).join(', ');
 const inlineBuild = await esbuild.build({
   ...common,
   stdin: {
