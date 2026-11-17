@@ -7,7 +7,7 @@ Preview advanced layouts directly on native Squarespace Simple List Sections and
 Paste these two lines into **Page Settings → Advanced → Page Header Code Injection**, save, and reload the page outside Squarespace Edit mode.
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.2.1/dist/gallery-inline.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.3.0/dist/gallery-inline.js"></script>
 <script type="application/json" data-gallery-configure>{}</script>
 ```
 
@@ -15,11 +15,15 @@ Your normal list or gallery appears with a **Configure layout** button. Click it
 
 ## Save a layout
 
-Choose **Copy page code** in the panel. In Page Header Code Injection, replace the `data-gallery-configure` line with that copied configuration and keep the CDN script line. Save and reload. The selected layout now runs automatically for visitors.
+While signed in to your Squarespace site, click **Save to page**. The configurator reads the current page header, updates this source's `data-gallery-layout` configuration, and verifies the saved header. Other galleries, schema, GSAP code, and unrelated page settings are retained. The installed CDN script remains required.
 
-Each saved configuration targets one section or block. For multiple galleries on a page, include one configuration per source and one CDN script.
+Save leaves the configure marker in place so you can continue editing. Remove that marker when finished if you do not want visitors to see the configurator. Visitors cannot save without an authenticated Squarespace session and editing permissions.
 
-To revise a saved layout, add the configure marker alongside its configuration, make your changes, and replace that source's configuration with fresh page code. Remove the configure marker when finished. The marker enables authoring controls for anyone viewing that page.
+**Copy code** and **View code** remain available for manual installation. **Download header backup** appears after a save attempt has read the original header; download it before closing the panel if you want to keep it. The backup is the header from before that attempt, not a full site backup.
+
+Preview changes are temporary until Save succeeds. After saving, Reset preview returns to the last saved settings. Local previews and pages without a signed-in session use the copy fallback. A page whose private password is omitted by Squarespace's settings response also uses that fallback, to avoid changing its password.
+
+Each saved configuration targets one section or block. Saving a second source keeps the first. If page settings change during a save, no write is sent. Failed or uncertain saves are reported without automatic write retries.
 
 ## Install across several pages
 
@@ -27,7 +31,7 @@ Alternatively, put the CDN script once in **site-wide Footer Code Injection**. T
 
 If upgrading from the large inline installer, replace that installer with the CDN script. Use one installer per page. Pages without either Gallery Configurator marker keep their normal content.
 
-The URL is pinned to `v0.1.1`. Update the version in your script URL when you choose to install a newer release.
+The URL is pinned to `v0.3.0`. Update the version in your script URL when you choose to install a newer release.
 
 ## Controls
 
@@ -69,3 +73,10 @@ The local standalone workbench can also be built with `npm run build:standalone`
 - The settings panel has a persistent scrollbar, keyboard-focusable scroll area, and wheel/touch event isolation from page-level smooth scrolling.
 
 Existing explicit full-page width settings are preserved. Existing Fluid Engine gallery configurations now follow block height by default; choose Custom height to opt out.
+
+### v0.3.0: direct page saving
+
+- Primary Save to page action, secondary copy/view controls, and downloadable pre-save header backup.
+- Uses the native GetCollectionSettings / SaveCollectionSettings envelope and the current browser session.
+- Updates the selected gallery only; reads the saved header back before reporting success.
+- Native Squarespace trims outer header whitespace; verification permits that normalization.

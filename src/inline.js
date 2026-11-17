@@ -1,3 +1,4 @@
+import { pageSaveContext, savePageHeader } from './page-save.js';
 import { defaults, presets, spiralDefaults, usesMinimumHeight, embed } from './runtime.js';
 import { discoverSources, readSource } from './sources.js';
 import { createPanel, controlGroups } from './inline-panel.js';
@@ -83,7 +84,7 @@ export function startInline() {
   if (!author && !snippets.length) return null;
   const sources = discoverSources();
   const records = new Map(sources.map(source => [source.root,{source,installed:null,options:null,mounted:null,presets:new Map()}]));
-  let panel=null, editing=null, css=null;
+  let panel=null, editing=null, css=null, saving=false;
   const cleanups=[];
   function apply(record, options) {
     if (record.mounted) record.mounted.instance.update({...options,previewScroll:false});
@@ -135,6 +136,16 @@ export function startInline() {
         change(next);
       },
       getCode:()=>pageCode(source,record.options),
+      onSave:async onBackup=>{
+        if(saving) throw Error('Another gallery is still saving. Please wait.');
+        const savedOptions={...record.options};
+        const context=pageSaveContext();
+        saving=true;
+        try {
+          await savePageHeader({snippet:pageCode(source,savedOptions),context,onBackup});
+          record.installed=savedOptions;
+        } finally {saving=false;}
+      },
       getStyle:()=>copyStyle(record.options),
       applyStyle:text=>{
         const next=readStyle(text,record.options);

@@ -108,3 +108,9 @@ textarea { display: block; width: 100%; height: 80px; min-height: 48px; max-heig
 .scroll::-webkit-scrollbar{width:10px}
 .scroll::-webkit-scrollbar-thumb{background:#9ba28f;border:2px solid #fafaf7;border-radius:8px}
 .scroll::-webkit-scrollbar-track{background:#eef0e8}
+
+.backup-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:7px; }
+.backup-actions .secondary { min-height:28px; padding:4px 8px; font-weight:450; }
+button:disabled { cursor:wait; opacity:.65; }
+.footer-line { align-items:flex-start; }
+.status { overflow-wrap:anywhere; }

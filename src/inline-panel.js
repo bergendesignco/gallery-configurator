@@ -118,7 +118,7 @@ function describeSource(source) {
 }
 
 /** Mount the author controls beside the currently selected source. */
-export function createPanel({ source, options, onPreset, onOption, onClose, onRestore, getCode, getStyle, applyStyle }) {
+export function createPanel({ source, options, onPreset, onOption, onClose, onRestore, onSave, getCode, getStyle, applyStyle }) {
   const previousFocus = document.activeElement;
   let currentSource = source;
   let current = optionsWithDefaults(options);
@@ -184,11 +184,15 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
 
   const footer = node('footer', 'footer');
   const exportActions = node('div', 'export-actions');
-  const copy = button('primary', 'Copy page code');
+  const save = button('primary', 'Save to page');
+  const copy = button('secondary', 'Copy code');
+  const backup = button('text-button', 'Download header backup');
+  backup.hidden = true;
+  let headerBackup = null;
   const view = button('secondary', 'View code');
   view.setAttribute('aria-expanded', 'false');
   view.setAttribute('aria-controls', 'gc-author-code');
-  exportActions.append(copy, view);
+  exportActions.append(save, copy);
   const codeView = node('div', 'code-view');
   codeView.id = 'gc-author-code';
   codeView.hidden = true;
@@ -204,7 +208,9 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   status.setAttribute('role', 'status');
   const reset = button('text-button', 'Reset preview');
   footerLine.append(status, reset);
-  footer.append(exportActions, codeView, footerLine);
+  const backupActions = node('div', 'backup-actions');
+  backupActions.append(view, backup);
+  footer.append(exportActions, backupActions, codeView, footerLine);
   controls.append(scroll, footer);
   panel.append(header, controls);
   shadow.append(style, panel);
@@ -427,6 +433,37 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     transfer.hidden = true;
     status.textContent = 'Style applied to this preview';
     pasteStyle.focus();
+  });
+  backup.addEventListener('click', () => {
+    if (!headerBackup) return;
+    const url = URL.createObjectURL(new Blob([headerBackup.header], {type:'text/plain'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'gallery-header-backup-' + headerBackup.collectionId + '.txt';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  save.addEventListener('click', async () => {
+    if(save.disabled) return;
+    save.disabled = reset.disabled = true;
+    scroll.inert = true;
+    save.textContent = 'Saving…';
+    status.textContent = 'Saving to page header…';
+    try {
+      await onSave(value => {
+        headerBackup = value;
+        if (!destroyed) backup.hidden = false;
+      });
+      if (!destroyed) status.textContent = 'Saved to page header';
+    } catch(error) {
+      if (!destroyed) status.textContent = error.message || 'Save failed. Copy code is still available.';
+    } finally {
+      if (!destroyed) {
+        save.disabled = reset.disabled = false;
+        scroll.inert = false;
+        save.textContent = 'Save to page';
+      }
+    }
   });
   copy.addEventListener('click', async () => {
     const attempt = ++copyAttempt;

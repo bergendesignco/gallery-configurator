@@ -1,12 +1,12 @@
 {
   "name": "gallery-studio",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs --cdn-only",
     "dev": "node scripts/dev.mjs",
-    "verify": "node scripts/verify.mjs --cdn-only",
+    "verify": "node scripts/verify.mjs --cdn-only && node scripts/verify-page-save.mjs",
     "test": "npm run verify",
     "build:standalone": "node scripts/build.mjs",
     "verify:standalone": "node scripts/verify.mjs"
