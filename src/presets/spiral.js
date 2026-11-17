@@ -78,6 +78,20 @@ export function mountSpiral(ctx) {
   setTransportIcon(root.querySelector('[data-orbit-next]'), 'next');
   setTransportIcon(toggle, 'playback');
   const caption = root.querySelector('.gc-spiral-caption');
+  // Overlay invisible title copies in one grid cell so the caption reserves
+  // the tallest title at any width, including after fonts load.
+  const captionSpace = document.createElement('div');
+  captionSpace.className = 'gc-spiral-caption-space';
+  caption.before(captionSpace);
+  captionSpace.append(caption);
+  const hasTitles = items.some(item => Boolean(item.title));
+  for (const title of new Set(items.map(item => item.title).filter(Boolean))) {
+    const measure = caption.cloneNode(false);
+    measure.setAttribute('aria-hidden', 'true');
+    measure.classList.add('gc-spiral-caption-measure');
+    measure.textContent = title;
+    captionSpace.append(measure);
+  }
   items.forEach((item, index) => {
     const card = document.createElement('button');
     card.className = 'orbit-card';
@@ -106,7 +120,7 @@ export function mountSpiral(ctx) {
     root.dataset.imagePadding = String(bounded(options.imagePadding, 0, 0, 20));
     root.dataset.slotGap = String(bounded(options.spiralGap, 3, 0, 16));
     root.dataset.showSlots = String(Boolean(options.showSlots));
-    caption.hidden = !options.showTitles;
+    captionSpace.hidden = !options.showTitles || !hasTitles;
     root.classList.toggle('gc-spiral-reduced', Boolean(options.reducedMotion));
   };
   setAttributes();
@@ -176,7 +190,6 @@ export function mountSpiral(ctx) {
   const originalActive = carousel.updateActive;
   carousel.updateActive = function (index) {
     originalActive.call(this, index);
-    caption.hidden = !options.showTitles || !items[index]?.title;
     this.status.textContent = `${items[index]?.title ? `${items[index].title}, ` : ''}image ${index + 1} of ${items.length}`;
     onChange(index);
   };

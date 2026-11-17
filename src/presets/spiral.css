@@ -4,7 +4,10 @@
 .gc-spiral-root .orbit-controls{justify-content:center;padding:12px 0 0;margin:0;gap:12px}
 .gc-spiral-root .orbit-pagination[hidden]{display:none!important}
 .gc-spiral-root .gc-spiral-caption{margin:12px 16px 4px;text-align:center;font-family:inherit;font-size:14px;font-weight:500;line-height:1.4;min-height:20px}
-.gc-spiral-root .gc-spiral-caption[hidden]{display:none}
+.gc-spiral-root .gc-spiral-caption-space{display:grid;min-width:0}
+.gc-spiral-root .gc-spiral-caption-space[hidden]{display:none}
+.gc-spiral-root .gc-spiral-caption-space>.gc-spiral-caption{grid-area:1/1;min-width:0;letter-spacing:-.02em}
+.gc-spiral-root .gc-spiral-caption-measure{visibility:hidden;pointer-events:none}
 .gc-spiral-root .gc-spiral-caption,
 .gc-spiral-dialog .project-info{overflow-wrap:anywhere}
 .gc-spiral-dialog .gc-spiral-source-link{max-width:100%}

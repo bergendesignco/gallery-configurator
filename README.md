@@ -7,7 +7,7 @@ Preview advanced layouts directly on native Squarespace Simple List Sections and
 Paste these two lines into **Page Settings → Advanced → Page Header Code Injection**, save, and reload the page outside Squarespace Edit mode.
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.2.0/dist/gallery-inline.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.2.1/dist/gallery-inline.js"></script>
 <script type="application/json" data-gallery-configure>{}</script>
 ```
 
