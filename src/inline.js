@@ -1,5 +1,5 @@
 import { pageSaveContext, savePageHeader } from './page-save.js';
-import { defaults, presets, spiralDefaults, usesMinimumHeight, embed } from './runtime.js';
+import { defaults, presets, spiralDefaults, usesMinimumHeight, editingNativePage, listenForEditMode, embed } from './runtime.js';
 import { discoverSources, readSource } from './sources.js';
 import { createPanel, controlGroups } from './inline-panel.js';
 import launcherCSS from './inline-launcher.css';
@@ -172,6 +172,25 @@ export function startInline() {
   for(const record of records.values()) if(record.installed) apply(record,record.installed);
   if(author && records.size) {
     css=document.createElement('style');css.textContent=launcherCSS;document.head.append(css);
+    const eye=document.createElement('button');
+    eye.type='button';
+    eye.className='gc-edit-eye';
+    eye.setAttribute('aria-label','Preview gallery layouts');
+    eye.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span></span>';
+    function updateEye(active=false){
+      eye.setAttribute('aria-pressed',String(active));
+      eye.querySelector('span').textContent=active?'Edit native content':'Preview galleries';
+      eye.hidden=!editingNativePage() || ![...records.values()].some(record=>record.mounted);
+    }
+    eye.onclick=()=>{
+      const active=eye.getAttribute('aria-pressed')!=='true';
+      for(const record of records.values())record.mounted?.instance.setEditPreview(active);
+      updateEye(active);
+    };
+    document.body.append(eye);
+    updateEye();
+    const stopEye=listenForEditMode(()=>updateEye());
+    cleanups.push(()=>{stopEye();eye.remove();});
     for(const record of records.values()) {
       const {source}=record;
       if (!source.selector) continue;

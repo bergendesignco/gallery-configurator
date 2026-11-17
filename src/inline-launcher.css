@@ -6,3 +6,8 @@ button.gc-config-launch:focus-visible{outline:3px solid #6281ff;outline-offset:3
 button.gc-config-launch:disabled{opacity:.65;cursor:default}
 .sqs-edit-mode-active .gc-config-launch,.sqs-edit-mode-active [data-gc-author-panel]{display:none!important}
 @media(max-width:700px){button.gc-config-launch{min-height:40px;inset:8px 8px auto auto}}
+
+button.gc-edit-eye{position:fixed;bottom:24px;right:24px;z-index:2147483000;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #ffffff60;border-radius:30px;background:#172331;color:white;font:550 13px/1.3 system-ui;cursor:pointer}
+button.gc-edit-eye[hidden]{display:none!important}
+.gc-edit-eye svg{width:20px;height:20px}
+.gc-edit-eye[aria-pressed=true]{background:#2547b3}

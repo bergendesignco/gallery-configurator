@@ -211,12 +211,12 @@ function releaseStickyBlockers(host,source){
  };
 }
 
-function editingNativePage(){
+export function editingNativePage(){
  return document.body.classList.contains('sqs-edit-mode-active')||document.documentElement.classList.contains('sqs-edit-mode-active');
 }
 
 // Release each source's native layout when editing starts.
-function listenForEditMode(listener){
+export function listenForEditMode(listener){
  if(!inlineRegistry.editListeners?.size){
   inlineRegistry.editListeners=new Set();
   let previous=editingNativePage();
@@ -259,7 +259,7 @@ export function embed({selector,type='gallery',options={}}={}){
  host.className='gc-embed';slot.className='gc-viewport-slot';slot.append(host);
  let current={...mergeOptions(defaults,options),previewScroll:false};
  let gallery=null,restoreScroll=null,restoreViewport=null,restoreBlock=null,stopEdit=null,destroyed=false,hidden=[];
- let listWidth=null;
+ let listWidth=null, editPreview=false, clonedTrack=null;
  function syncWidth(){
   if(current.galleryWidth==='source'){
    restoreViewport?.();restoreViewport=null;
@@ -296,11 +296,15 @@ export function embed({selector,type='gallery',options={}}={}){
    restoreViewport?.();restoreViewport=null;
    hidden.forEach(node=>node.classList.remove('gc-native-items-hidden'));
    hidden=[];
+   clonedTrack?.remove();
+   clonedTrack=null;
    slot.remove();
+   slot.replaceChildren(host);
+   host.inert=false;
   }
  }
  function mount(){
-  if(destroyed||!source.isConnected)return;
+  if(destroyed||gallery||!source.isConnected)return;
   const live=sourcePlacement(source,type);
   const items=readSource(source,type);
   if(!live||!items.length)return;
@@ -309,23 +313,42 @@ export function embed({selector,type='gallery',options={}}={}){
   const track=live.originals[0];
   listWidth=type==='list'?{mode:track.dataset.layoutWidth||'full',maximum:track.style.maxWidth}:null;
   syncWidth();
-  const list=type==='list'?createSimpleList(slot,live.originals[0],live.rows):null;
-  if(!list){
+  let list=null;
+  if(type==='list'){
+   const previewTrack=editPreview ? track.cloneNode(true) : track;
+   if(editPreview){
+    clonedTrack=previewTrack;
+    previewTrack.removeAttribute('id');
+    previewTrack.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
+    slot.append(previewTrack);
+   }
+   list=createSimpleList(slot,previewTrack,editPreview ? [...previewTrack.querySelectorAll('.list-item')] : live.rows);
+  }
+  if(!list||editPreview){
    hidden=live.originals;
    hidden.forEach(node=>node.classList.add('gc-native-items-hidden'));
   }
   syncBlock();
   syncScroll(current.preset);
   gallery=mountGallery(host,items,current,list);
+  host.inert=editPreview;
  }
  function destroy(){
   if(destroyed)return;
   destroyed=true;
+  source.classList.remove('gc-edit-preview');
   try{unmount();}
   finally{stopEdit?.();inlineRegistry.mounts.delete(source);}
  }
  const instance={
   update(next={}){if(destroyed)return;const width=current.galleryWidth;current={...mergeOptions(current,next),previewScroll:false};if(gallery){if(current.galleryWidth!==width)syncWidth();syncBlock();syncScroll(current.preset);gallery.update(current);}},
+  setEditPreview(enabled){
+   if(destroyed || !editingNativePage() || enabled===editPreview)return;
+   editPreview=enabled;
+   source.classList.toggle('gc-edit-preview',enabled);
+   if(!enabled){unmount();return;}
+   try{mount();}catch(error){this.setEditPreview(false);throw error;}
+  },
   goTo(i){gallery?.goTo(i);},
   setPlaying(value){current.autoplay=value;gallery?.setPlaying(value);},
   getOptions(){return {...current};},getActive(){return gallery?.getActive()??0;},destroy
@@ -333,7 +356,10 @@ export function embed({selector,type='gallery',options={}}={}){
  const handle={instance,host,source,destroy};
  try{
   stopEdit=listenForEditMode(editing=>{
-   if(editing){unmount();return;}
+   if(editPreview||editing)unmount();
+   editPreview=false;
+   source.classList.remove('gc-edit-preview');
+   if(editing)return;
    try{mount();}catch(error){unmount();throw error;}
   });
   if(!editingNativePage())mount();

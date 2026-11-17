@@ -83,3 +83,6 @@
 .gc-block-fit .gc-spatial-canvas{height:var(--gc-block-stage-height,100%)!important;min-height:0!important}
 .gc-block-stage-window{position:relative;overflow:clip}
 .gc-block-stage-window>.gc-carousel-stage{position:absolute;left:50%;top:var(--gc-block-top,0px);transform:translateX(-50%) scale(var(--gc-block-scale,1));transform-origin:top center}
+
+.sqs-edit-mode-active .gc-edit-preview .gc-embed{display:block!important}
+.sqs-edit-mode-active .gc-edit-preview .gc-native-items-hidden{display:none!important}
