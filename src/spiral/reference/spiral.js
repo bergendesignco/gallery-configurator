@@ -320,7 +320,7 @@
       const coordinate = pointer.axis === 'x' ? event.clientX : event.clientY;
       const distance = pointer.axis === 'x' ? dx : dy;
       const unit = pointer.axis === 'x' ? this.geometry.dragUnitX : this.geometry.dragUnitY;
-      const dragUnit = event.pointerType === 'touch' ? unit * .75 : unit;
+      const dragUnit = event.pointerType === 'touch' ? clamp(unit * .38, 32, 48) : unit;
       const now = performance.now();
       const elapsed = Math.max(8, now - pointer.lastTime);
       const nextSpeed = -(coordinate - pointer.lastCoordinate) / dragUnit / elapsed * 1000;
@@ -346,7 +346,7 @@
         return;
       }
       const speed = canceled || performance.now() - pointer.lastMovement > 90 ? 0 : clamp(pointer.speed, -10, 10);
-      let destination = Math.round(this.position + (this.reducedMotion.matches ? 0 : speed * .20));
+      let destination = Math.round(this.position + (this.reducedMotion.matches ? 0 : speed * (event.pointerType === 'touch' ? .32 : .20)));
       const movement = this.position - pointer.startPosition;
       // A deliberate short swipe should advance, even when it has little momentum.
       if (!canceled && Math.abs(pointer.travel) > 18 && Math.abs(movement) > .12 && destination === Math.round(pointer.startPosition)) {
