@@ -133,6 +133,7 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
     panels.forEach(panel=>{
       panel.material.uniforms.dimensions.value.set(cardWidth,card.height);
       const image=panel.material.uniforms.screenshot.value.image;
+      if (!image) return;
       const frame=imageFrame(cardWidth,card.height,(image.naturalWidth||image.width)/(image.naturalHeight||image.height),root.dataset.imageFit,Number(root.dataset.imagePadding||0));
       panel.material.uniforms.contentDimensions.value.set(frame.contentWidth,frame.contentHeight);
       panel.material.uniforms.imageScale.value.set(frame.uvScaleX,frame.uvScaleY);
@@ -182,7 +183,7 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
       const focused=keyboard&&card===carousel.cards[carousel.active]&&Math.abs(panel.offset)<.5;
       material.polygonOffsetUnits=Math.abs(panel.offset)*8;
       mesh.position.set(pose.x,pose.y,pose.z);mesh.rotation.y=pose.angle;
-      mesh.visible=fade>.001;
+      mesh.visible=fade>.001 && Boolean(material.uniforms.screenshot.value.image);
       if(mesh.visible)visibleCount++;
       panel.guide.position.copy(mesh.position);panel.guide.rotation.copy(mesh.rotation);
       panel.guide.visible=root.dataset.showSlots==='true'&&mesh.visible;
@@ -261,26 +262,33 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
   const resizeObserver=new ResizeObserver(()=>draw());
   resizeObserver.observe(stage);
   const loader = new TextureLoader();
-  const textureJobs = carousel.cards.map(card => new Promise((resolve, reject) => {
+  let textureFailed = false;
+  const useImageFallback = () => {
+    if (disposed) return;
+    textureFailed = true;
+    ready = false;
+    root.classList.remove('has-webgl-carousel');
+    root.dataset.renderer = 'css-fallback';
+  };
+  for (const card of carousel.cards) {
     const src = textureSource(card);
-    const texture = loader.load(src, resolve, undefined, reject);
+    if (textures.has(src)) continue;
+    const texture = loader.load(src, draw, undefined, useImageFallback);
     texture.colorSpace = SRGBColorSpace;
     texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     textures.set(src, texture);
-  }));
+  }
 
-  const activate = () => {
-    if (disposed) return;
+  // Position every slot with the final camera from the first paint. Each image
+  // becomes visible in place as soon as its texture arrives.
+  if (!textureFailed) {
     geometry=playgroundCardGeometry(readSlots(),Number(root.dataset.slotGap||3));
     guideGeometry=new BufferGeometry();
     ready = true;
-    draw();
     root.classList.add('has-webgl-carousel');
     root.dataset.renderer = 'webgl';
-  };
-  Promise.all(textureJobs).then(activate).catch(() => {
-    if (!disposed) root.dataset.renderer = 'css-fallback';
-  });
+    draw();
+  }
 
   return () => {
     disposed = true;

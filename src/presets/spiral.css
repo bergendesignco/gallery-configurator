@@ -20,3 +20,11 @@
 .gc-spiral-dialog [hidden]{display:none!important}
 .gc-spiral-reduced,.gc-spiral-reduced *{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){.gc-spiral-root .slot-carousel .orbit-stage{mask-image:none}}
+
+/* A single image per fallback card avoids seams between rotated CSS strips. */
+.gc-spiral-root .spiral-carousel .orbit-strip { display: none; }
+.gc-spiral-root .spiral-carousel .orbit-card.is-curved .orbit-surface > img {
+  visibility: inherit;
+  opacity: var(--orbit-fade, 1);
+}
+.gc-spiral-root .spiral-carousel[data-image-fit="fit"] .orbit-card img { object-fit: contain; }
