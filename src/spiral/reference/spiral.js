@@ -305,9 +305,10 @@
       const dy = event.clientY - pointer.y;
       if (!pointer.dragging) {
         if (Math.max(Math.abs(dx), Math.abs(dy)) < 6) return;
-        // Give vertical and ambiguous diagonal touch gestures to native page scrolling.
-        if (event.pointerType === 'touch' && Math.abs(dx) <= Math.abs(dy) * 1.2) {
-          this.pointerUp(event, true);
+        // Keep a diagonal start pending. The browser cancels the pointer when
+        // it starts scrolling; a thumb that turns sideways can still rotate.
+        if (event.pointerType === 'touch' && Math.abs(dx) <= Math.abs(dy)) {
+          pointer.card = null;
           return;
         }
         pointer.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
@@ -319,15 +320,16 @@
       const coordinate = pointer.axis === 'x' ? event.clientX : event.clientY;
       const distance = pointer.axis === 'x' ? dx : dy;
       const unit = pointer.axis === 'x' ? this.geometry.dragUnitX : this.geometry.dragUnitY;
+      const dragUnit = event.pointerType === 'touch' ? unit * .75 : unit;
       const now = performance.now();
       const elapsed = Math.max(8, now - pointer.lastTime);
-      const nextSpeed = -(coordinate - pointer.lastCoordinate) / unit / elapsed * 1000;
+      const nextSpeed = -(coordinate - pointer.lastCoordinate) / dragUnit / elapsed * 1000;
       pointer.speed = pointer.speed * .35 + nextSpeed * .65;
       pointer.lastMovement = now;
       pointer.lastTime = now;
       pointer.lastCoordinate = coordinate;
       pointer.travel = distance;
-      this.position = pointer.startPosition - distance / unit;
+      this.position = pointer.startPosition - distance / dragUnit;
       this.render();
     }
 
