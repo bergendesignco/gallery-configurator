@@ -135,6 +135,11 @@ export function startInline() {
         const next={...record.options,[key]:value};
         change(next);
       },
+      getSaveState:()=>{
+        if(!record.installed)return 'Not saved yet';
+        return pageCode(source,record.options)===pageCode(source,record.installed)
+          ? 'Saved to page' : 'Unsaved changes';
+      },
       getCode:()=>pageCode(source,record.options),
       onSave:async onBackup=>{
         if(saving) throw Error('Another gallery is still saving. Please wait.');

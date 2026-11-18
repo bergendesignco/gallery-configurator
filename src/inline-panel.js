@@ -118,7 +118,7 @@ function describeSource(source) {
 }
 
 /** Mount the author controls beside the currently selected source. */
-export function createPanel({ source, options, onPreset, onOption, onClose, onRestore, onSave, getCode, getStyle, applyStyle }) {
+export function createPanel({ source, options, onPreset, onOption, onClose, onRestore, onSave, getSaveState, getCode, getStyle, applyStyle }) {
   const previousFocus = document.activeElement;
   let currentSource = source;
   let current = optionsWithDefaults(options);
@@ -144,7 +144,14 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   const title = node('h2', '', 'Gallery settings');
   title.id = 'gc-author-heading';
   const target = node('p', 'target');
-  heading.append(title, target);
+  const saveState = node('p', 'save-state');
+  saveState.setAttribute('role','status');
+  heading.append(title, target, saveState);
+  function showSaveState(label = getSaveState()) {
+    if(saveState.textContent === label)return;
+    saveState.textContent = label;
+    saveState.dataset.saved = String(label === 'Saved to page');
+  }
   const headerActions = node('div', 'header-actions');
   const minimize = button('icon-button', '−', 'Minimize settings');
   minimize.setAttribute('aria-controls', 'gc-author-controls');
@@ -249,6 +256,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   }
 
   function refreshCode() {
+    showSaveState();
     copyAttempt += 1;
     status.textContent = '';
     if (!codeView.hidden) code.value = getCode();
@@ -448,6 +456,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     save.disabled = reset.disabled = true;
     scroll.inert = true;
     save.textContent = 'Saving…';
+    showSaveState('Saving…');
     status.textContent = 'Saving to page header…';
     try {
       await onSave(value => {
@@ -462,6 +471,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
         save.disabled = reset.disabled = false;
         scroll.inert = false;
         save.textContent = 'Save to page';
+        showSaveState();
       }
     }
   });
