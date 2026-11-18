@@ -182,14 +182,39 @@ export function startInline() {
       eye.querySelector('span').textContent=active?'Edit native content':'Preview galleries';
       eye.hidden=!editingNativePage() || ![...records.values()].some(record=>record.mounted);
     }
+    // Fluid Engine can replace the block element when entering or leaving Edit.
+    function reconnect(record){
+      if(!record.mounted || record.source.root.isConnected)return;
+      const previous=record.source.root;
+      const matches=document.querySelectorAll(record.source.selector);
+      if(matches.length!==1)return;
+      const root=matches[0];
+      record.mounted.destroy();
+      record.mounted=null;
+      record.source.root=root;
+      records.delete(previous);
+      records.set(root,record);
+      apply(record,record.options);
+      const anchor=root.querySelector(record.source.type==='list'?'.user-items-list':'.sqs-block-content')||root;
+      if(record.button){
+        if(getComputedStyle(anchor).position==='static')anchor.classList.add('gc-config-position');
+        anchor.append(record.button);
+      }
+    }
     eye.onclick=()=>{
       const active=eye.getAttribute('aria-pressed')!=='true';
-      for(const record of records.values())record.mounted?.instance.setEditPreview(active);
+      for(const record of [...records.values()]){
+        reconnect(record);
+        record.mounted?.instance.setEditPreview(active);
+      }
       updateEye(active);
     };
     document.body.append(eye);
     updateEye();
-    const stopEye=listenForEditMode(()=>updateEye());
+    const stopEye=listenForEditMode(editing=>{
+      if(!editing)requestAnimationFrame(()=>{if(eye.isConnected)for(const record of [...records.values()])reconnect(record);});
+      updateEye();
+    });
     cleanups.push(()=>{stopEye();eye.remove();});
     for(const record of records.values()) {
       const {source}=record;
