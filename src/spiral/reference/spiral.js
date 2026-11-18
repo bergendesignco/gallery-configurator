@@ -305,6 +305,11 @@
       const dy = event.clientY - pointer.y;
       if (!pointer.dragging) {
         if (Math.max(Math.abs(dx), Math.abs(dy)) < 6) return;
+        // Give vertical and ambiguous diagonal touch gestures to native page scrolling.
+        if (event.pointerType === 'touch' && Math.abs(dx) <= Math.abs(dy) * 1.2) {
+          this.pointerUp(event, true);
+          return;
+        }
         pointer.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
         pointer.lastCoordinate = pointer.axis === 'x' ? pointer.x : pointer.y;
         pointer.dragging = true;

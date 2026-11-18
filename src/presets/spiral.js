@@ -9,8 +9,7 @@ import '../spiral/reference/scoped.css';
 import '../spiral/project-viewer.css';
 import './spiral.css';
 
-// The original controller is retained byte-for-byte. This adapter owns only its
-// mounting, settings and source-content boundary, not its geometry or movement.
+// The controller owns geometry, movement and gesture handling.
 const referenceController = window.SpiralCarousel;
 let nextId = 0;
 

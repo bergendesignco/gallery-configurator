@@ -138,8 +138,8 @@
   .reference-carousel-shell .spiral-carousel .orbit-stage { mask-image: none; }
 }
 
-/* The spiral owns one-finger swipes in both directions; pinch zoom stays native. */
-.reference-carousel-shell .spiral-carousel .orbit-stage { touch-action: pinch-zoom; -webkit-touch-callout: none; }
+/* Vertical scrolling and pinch zoom stay native over the spiral. */
+.reference-carousel-shell .spiral-carousel .orbit-stage { touch-action: pan-y pinch-zoom; -webkit-touch-callout: none; }
 .reference-carousel-shell .spiral-carousel .orbit-controls { gap: 18px; margin-top: 4px; }
 .reference-carousel-shell .spiral-carousel .orbit-card { cursor: pointer; }
 .reference-carousel-shell .spiral-carousel.is-dragging .orbit-card { cursor: grabbing; }

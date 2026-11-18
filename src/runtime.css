@@ -78,7 +78,7 @@
 .gc-block-bound{height:100%!important;min-height:0!important}
 .gc-block-bound>.sqs-block-content{position:relative!important;height:100%!important;min-height:0!important}
 .gc-block-slot{position:absolute!important;inset:0;height:100%;min-height:0}
-.gc-block-slot>.gc-block-fit{height:100%!important;min-height:0;overflow:auto;overscroll-behavior:contain}
+.gc-block-slot>.gc-block-fit{height:100%!important;min-height:0;overflow:auto;overscroll-behavior-x:contain}
 .gc-block-fit .orbit-stage{height:var(--gc-block-stage-height,100%)!important;min-height:0!important}
 .gc-block-fit .gc-spatial-canvas{height:var(--gc-block-stage-height,100%)!important;min-height:0!important}
 .gc-block-stage-window{position:relative;overflow:clip}
