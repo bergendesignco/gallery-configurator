@@ -216,7 +216,9 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   const reset = button('text-button', 'Reset preview');
   footerLine.append(status, reset);
   const backupActions = node('div', 'backup-actions');
-  backupActions.append(view, backup);
+  const removeLayout = button('text-button', 'Remove layout');
+  removeLayout.hidden = getSaveState() === 'Not saved yet';
+  backupActions.append(view, backup, removeLayout);
   footer.append(exportActions, backupActions, codeView, footerLine);
   controls.append(scroll, footer);
   panel.append(header, controls);
@@ -451,30 +453,34 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
-  save.addEventListener('click', async () => {
+  async function persist(remove = false) {
+    if(remove && !window.confirm('Remove the saved layout from this '+currentSource.name+' and restore its native appearance?'))return;
     if(save.disabled) return;
-    save.disabled = reset.disabled = true;
+    save.disabled = reset.disabled = removeLayout.disabled = true;
     scroll.inert = true;
     save.textContent = 'Saving…';
-    showSaveState('Saving…');
-    status.textContent = 'Saving to page header…';
+    showSaveState(remove ? 'Removing…' : 'Saving…');
+    status.textContent = remove ? 'Removing layout…' : 'Saving to page header…';
     try {
       await onSave(value => {
         headerBackup = value;
         if (!destroyed) backup.hidden = false;
-      });
+      }, remove);
       if (!destroyed) status.textContent = 'Saved to page header';
     } catch(error) {
       if (!destroyed) status.textContent = error.message || 'Save failed. Copy code is still available.';
     } finally {
       if (!destroyed) {
-        save.disabled = reset.disabled = false;
+        save.disabled = reset.disabled = removeLayout.disabled = false;
+        removeLayout.hidden = getSaveState() === 'Not saved yet';
         scroll.inert = false;
         save.textContent = 'Save to page';
         showSaveState();
       }
     }
-  });
+  }
+  save.addEventListener('click', () => persist());
+  removeLayout.addEventListener('click', () => persist(true));
   copy.addEventListener('click', async () => {
     const attempt = ++copyAttempt;
     const snippet = getCode();

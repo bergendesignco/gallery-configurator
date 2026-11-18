@@ -141,14 +141,23 @@ export function startInline() {
           ? 'Saved to page' : 'Unsaved changes';
       },
       getCode:()=>pageCode(source,record.options),
-      onSave:async onBackup=>{
+      onSave:async (onBackup, remove = false)=>{
         if(saving) throw Error('Another gallery is still saving. Please wait.');
         const savedOptions={...record.options};
         const context=pageSaveContext();
         saving=true;
         try {
-          await savePageHeader({snippet:pageCode(source,savedOptions),context,onBackup});
-          record.installed=savedOptions;
+          await savePageHeader({snippet:pageCode(source,savedOptions),context,onBackup,remove});
+          if(remove){
+            record.installed=null;
+            if(editing===record)restore(record);
+            else {
+              record.presets.clear();
+              record.mounted?.destroy();
+              record.mounted=null;
+              record.options=null;
+            }
+          }else record.installed=savedOptions;
         } finally {saving=false;}
       },
       getStyle:()=>copyStyle(record.options),

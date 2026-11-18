@@ -7,6 +7,8 @@ const comment = '<!-- archived example: '+snippet('#one','wall')+' -->';
 assert.equal(mergePageHeader(comment,selected),comment+'\n'+selected+'\n');
 const other = snippet('#two','arc');
 const header = unrelated+'\n'+snippet('#one','wall')+'\n'+other;
+assert.equal(mergePageHeader(header,selected,true),unrelated+'\n\n'+other);
+assert.equal(mergePageHeader(other,selected,true),other);
 const merged = mergePageHeader(header,selected);
 assert.equal(merged,unrelated+'\n'+selected+'\n'+other);
 assert.equal(mergePageHeader(merged,selected),merged);

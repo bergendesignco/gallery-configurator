@@ -17,7 +17,7 @@ function readLayout(attrs, content) {
   return data;
 }
 
-export function mergePageHeader(header, snippet) {
+export function mergePageHeader(header, snippet, remove = false) {
   const incoming = [...snippet.matchAll(scripts)];
   if (incoming.length !== 1 || incoming[0][0] !== snippet.trim()) throw Error('Invalid gallery settings.');
   const target = readLayout(incoming[0][1], incoming[0][2]);
@@ -26,11 +26,11 @@ export function mergePageHeader(header, snippet) {
   const merged = header.replace(scripts, (whole, attrs, content) => {
     const data = readLayout(attrs, content);
     if (!data || data.selector !== target.selector) return whole;
-    if (replaced) return '';
+    if (remove || replaced) return '';
     replaced = true;
     return snippet;
   });
-  return replaced ? merged : merged + (merged && !merged.endsWith('\n') ? '\n' : '') + snippet + '\n';
+  return remove || replaced ? merged : merged + (merged && !merged.endsWith('\n') ? '\n' : '') + snippet + '\n';
 }
 
 export function pageSaveContext(win = window) {
@@ -45,7 +45,7 @@ export function pageSaveContext(win = window) {
   return { collectionId, websiteId, crumb: decodeURIComponent(crumb) };
 }
 
-export async function savePageHeader({ snippet, context, fetchImpl = fetch, onBackup = () => {} }) {
+export async function savePageHeader({ snippet, context, remove = false, fetchImpl = fetch, onBackup = () => {} }) {
   const { collectionId, websiteId, crumb } = context;
   if (!idPattern.test(collectionId || '') || !idPattern.test(websiteId || '') || !crumb) throw Error('A signed-in Squarespace page is required.');
   async function read() {
@@ -66,7 +66,7 @@ export async function savePageHeader({ snippet, context, fetchImpl = fetch, onBa
     throw Error('This page has a private password setting. Use Copy code in its native Page Settings to preserve that password.');
   }
   const header = before.model.headerInjectCode ?? '';
-  const next = mergePageHeader(header, snippet);
+  const next = mergePageHeader(header, snippet, remove);
   if (next === header) return { unchanged: true };
   onBackup({ collectionId, header, savedAt: new Date().toISOString() });
   // Detect intervening edits before sending the complete native page model.
