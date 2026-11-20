@@ -61,6 +61,7 @@ export function controlGroups(options, sourceType) {
     ] });
   }
   if (preset !== 'stack') {
+    interaction.push({ key: 'showControls', label: 'Show controls', type: 'checkbox' });
     interaction.push({ key: 'autoplay', label: 'Autoplay', type: 'checkbox' });
     if (preset !== 'spiral') interaction.push(range('duration', 'Time per image', 2, 15, 0.5, 's'));
   }

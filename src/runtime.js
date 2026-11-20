@@ -30,7 +30,7 @@ export const presets=[
 {id:'spiral',name:'Spiral carousel',category:'Rotate',hint:'Drag to rotate · Click the active image to open',width:280},
 {id:'ring',name:'Interactive ring',category:'Hover',hint:'Move over the images · Drag to rotate',width:150},
 {id:'angled',name:'Angled gallery',category:'Perspective',hint:'Drag to explore · Hover to bring an image forward',width:240}];
-export const defaults={...appearanceDefaults,colorSource:'custom',typeSource:'preset',preset:'arc-tabs',galleryWidth:'full',galleryHeight:'source',navigation:'auto',cardWidth:360,gap:28,mobileCardWidth:null,mobileGap:null,radius:16,depth:48,stageHeight:0,duration:5,autoplay:false,showTitles:true,fit:'cover',clickAction:'preview',background:'#edf0f4',ink:'#1b2838',accent:'#345bf2',reducedMotion:false};
+export const defaults={...appearanceDefaults,colorSource:'custom',typeSource:'preset',preset:'arc-tabs',galleryWidth:'full',galleryHeight:'source',navigation:'auto',showControls:true,cardWidth:360,gap:28,mobileCardWidth:null,mobileGap:null,radius:16,depth:48,stageHeight:0,duration:5,autoplay:false,showTitles:true,fit:'cover',clickAction:'preview',background:'#edf0f4',ink:'#1b2838',accent:'#345bf2',reducedMotion:false};
 export function usesMinimumHeight(preset) {
  return ['infinite','arc','arc-tabs','showcase','timed'].includes(preset);
 }
@@ -126,6 +126,7 @@ export function mountGallery(host,items,initial={},nativeList=null){
   return resolved;
  }
  function styleHost(){
+  host.classList.toggle('gc-hide-controls',options.showControls===false);
   styleAppearance(host,options);
   host.style.setProperty('--gc-fit',options.fit);
   host.style.setProperty('--gc-card-radius',options.radius+'px');
@@ -185,7 +186,7 @@ export function mountGallery(host,items,initial={},nativeList=null){
   if(changed.includes('typeSource'))nativeList?.setType(options.typeSource);
   return;
  }
- if(old==='spiral'&&options.preset==='spiral'&&engine?.update){styleHost();engine.update(resolved);}else render(old===options.preset?active:0);},goTo(i){engine?.goTo?.(i);},setPlaying(value){options.autoplay=value;engine?.setPlaying?.(value);},getOptions(){return {...options};},getActive(){return active;},destroy(){closeDialog();cancelAnimationFrame(loadFrame);engine?.destroy();nativeList?.restore();mq.removeEventListener('change',motion);phone.removeEventListener('change',resizePhone);host.replaceChildren();host.classList.remove('gc-stage');releaseStyles?.();}};
+ if(old==='spiral'&&options.preset==='spiral'&&engine?.update){styleHost();engine.update(resolved);}else render(old===options.preset?active:0);},goTo(i){engine?.goTo?.(i);},setPlaying(value){options.autoplay=value;engine?.setPlaying?.(value);},getOptions(){return {...options};},getActive(){return active;},destroy(){closeDialog();cancelAnimationFrame(loadFrame);engine?.destroy();nativeList?.restore();mq.removeEventListener('change',motion);phone.removeEventListener('change',resizePhone);host.replaceChildren();host.classList.remove('gc-stage','gc-hide-controls');releaseStyles?.();}};
 }
 // Self-contained exports may each include a copy of the runtime on the same page.
 const inlineRegistry=window[Symbol.for('gallery-studio.inline')]??={mounts:new WeakMap(),scrollBoundaries:new WeakMap()};

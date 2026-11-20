@@ -23,10 +23,10 @@ export function fitBlock(slot, host, source) {
     let chrome = 0;
     for (const child of root.children) {
       if (child === stage || child.contains(stage)) continue;
+      watch(child);
       const css = getComputedStyle(child);
       if (css.display === 'none' || ['absolute','fixed'].includes(css.position)) continue;
       chrome += child.offsetHeight + (parseFloat(css.marginTop)||0) + (parseFloat(css.marginBottom)||0);
-      watch(child);
     }
     const budget = Math.max(1, slot.clientHeight - chrome);
     if (carousel) {
