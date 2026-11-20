@@ -28,3 +28,10 @@
   opacity: var(--orbit-fade, 1);
 }
 .gc-spiral-root .spiral-carousel[data-image-fit="fit"] .orbit-card img { object-fit: contain; }
+
+.gc-spiral-root .orbit-surface > img {border-radius:var(--orbit-card-radius)}
+.gc-spiral-root .spiral-carousel .orbit-card.is-curved .orbit-surface::after {
+  content:"";border:var(--gc-line-size) solid var(--orbit-rim);border-radius:var(--orbit-card-radius);background:none;
+}
+.gc-spiral-root [data-back-face=solid] .orbit-card[data-gc-back-facing] .orbit-surface > img {opacity:0}
+.gc-spiral-root [data-back-face=solid] .orbit-card[data-gc-back-facing] .orbit-surface {background:var(--gc-back-color);border-radius:var(--orbit-card-radius)}

@@ -23,6 +23,10 @@ const fragmentShader = `
   uniform sampler2D screenshot;
   uniform vec2 dimensions;
   uniform float cornerRadius;
+  uniform float borderWidth;
+  uniform vec3 borderColor;
+  uniform vec3 backColor;
+  uniform bool solidBack;
   uniform vec2 contentDimensions;
   uniform vec2 imageScale;
   uniform float fade;
@@ -43,6 +47,11 @@ const fragmentShader = `
     gl_FragColor = texture2D(screenshot,clamp(sampleUv,vec2(0.0),vec2(1.0)));
     #include <colorspace_fragment>
     gl_FragColor.a *= inContent * inImage;
+    if (solidBack && !gl_FrontFacing) gl_FragColor = vec4(backColor,1.0);
+    if (borderWidth > 0.0) {
+      float rim = smoothstep(-borderWidth-aa,-borderWidth+aa,edge);
+      gl_FragColor = mix(gl_FragColor,vec4(borderColor,1.0),rim);
+    }
     if (gl_FragColor.a < .001) discard;
     // Match the old sRGB darkening, without a second coplanar overlay.
     gl_FragColor.rgb *= 1.0 - shade;
@@ -103,6 +112,7 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
     const material=new ShaderMaterial({uniforms:{
       screenshot:{value:textures.get(textureSource(card))},dimensions:{value:new Vector2()},
       contentDimensions:{value:new Vector2(1,1)},imageScale:{value:new Vector2(1,1)},
+      borderColor:{value:[0,0,0]},backColor:{value:[0,0,0]},solidBack:{value:false},borderWidth:{value:0},
       cornerRadius:{value:0},fade:{value:1},shade:{value:0},focused:{value:0}},
       vertexShader,fragmentShader,transparent:true,side:DoubleSide,depthTest:true,depthWrite:true,
       forceSinglePass:true,polygonOffset:true,polygonOffsetFactor:0,polygonOffsetUnits:0});
@@ -132,6 +142,18 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
     root.dataset.slotMetrics=JSON.stringify({...slots,cardArc:panelArc,cardWidth,cardHeight:card.height,gap,imageFit:root.dataset.imageFit,imagePadding:Number(root.dataset.imagePadding||0)});
     panels.forEach(panel=>{
       panel.material.uniforms.dimensions.value.set(cardWidth,card.height);
+      const uniforms=panel.material.uniforms;
+      uniforms.cornerRadius.value=Math.min(Number(root.dataset.cornerRadius)||0,cardWidth/2,card.height/2);
+      uniforms.borderWidth.value=Number(root.dataset.borderWidth)||0;
+      uniforms.solidBack.value=root.dataset.backFace==='solid';
+      for(const key of ['backColor','borderColor']){
+        const uniform=uniforms[key], hex=root.dataset[key];
+        if(uniform.hex!==hex){
+          uniform.hex=hex;
+          const rgb=parseInt(hex.slice(1),16);
+          uniform.value=[rgb>>16,(rgb>>8)&255,rgb&255].map(channel=>channel/255);
+        }
+      }
       const image=panel.material.uniforms.screenshot.value.image;
       if (!image) return;
       const frame=imageFrame(cardWidth,card.height,(image.naturalWidth||image.width)/(image.naturalHeight||image.height),root.dataset.imageFit,Number(root.dataset.imagePadding||0));
@@ -156,12 +178,10 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
     const oldGuide=guideGeometry;
     guideGeometry=new BufferGeometry();
     guideGeometry.setAttribute('position',new Float32BufferAttribute(slotPerimeter(slots),3));
-    const corner = 0;
     panels.forEach(panel => {
       panel.mesh.geometry = geometry;
       panel.guide.geometry=guideGeometry;
       panel.material.uniforms.dimensions.value.set(cardWidth, card.height);
-      panel.material.uniforms.cornerRadius.value = corner;
     });
     previous?.dispose();oldGuide?.dispose();
   };
@@ -179,7 +199,8 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
       const {card,mesh,material}=panel;
       const pose=fixedSlotPose(panel.offset,slots);
       const bounds=projectedCardBounds(panel.offset,slots,cardDimensions);
-      const fade=projectedCardFade(bounds,stage.clientHeight);
+      const projectedFade=projectedCardFade(bounds,stage.clientHeight);
+      const fade=root.dataset.edgeMode==='preset' ? projectedFade : Number(projectedFade>0);
       const focused=keyboard&&card===carousel.cards[carousel.active]&&Math.abs(panel.offset)<.5;
       material.polygonOffsetUnits=Math.abs(panel.offset)*8;
       mesh.position.set(pose.x,pose.y,pose.z);mesh.rotation.y=pose.angle;

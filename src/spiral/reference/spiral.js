@@ -194,6 +194,7 @@
         card.style.opacity = '1';
         card.style.visibility = edgeOpacity > 0 ? 'visible' : 'hidden';
         card.style.pointerEvents = edgeOpacity > .25 ? 'auto' : 'none';
+        card.toggleAttribute('data-gc-back-facing', cosine < 0);
         card.dataset.offset = offset.toFixed(5);
       });
       const nearest = wrap(Math.round(this.position), this.count);

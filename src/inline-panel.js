@@ -24,6 +24,13 @@ function range(key, label, min, max, step, unit = '') {
   return { key, label, type: 'range', min, max, step, unit };
 }
 
+function select(key,label,entries) {
+  return {key,label,type:'select',choices:Object.entries(entries).map(([value,label])=>({value,label}))};
+}
+function swatch(key,label,when) {
+  return {key,label,type:'color',when, independent:true};
+}
+
 export function controlGroups(options, sourceType) {
   const preset = options.preset;
   const minimum = usesMinimumHeight(preset);
@@ -85,7 +92,10 @@ export function controlGroups(options, sourceType) {
         { value: 'preset', label: 'Layout preset' },
       ] },
       { key: 'fit', label: 'Image fit', type: 'select', choices: imageFits },
-      ...(preset==='spiral'?[]:[
+      ...(preset==='spiral'?[
+        range('spiralRadius','Corner radius',0,64,1,'px'),
+        range('borderWidth','Border width',0,12,1,'px'), swatch('spiralRim','Border color'),
+      ]:[
         range('radius','Corner radius',0,64,1,'px'),
         range('borderWidth','Border width',0,12,1,'px'),
         {key:'borderColor',label:'Border color',type:'color'},
@@ -98,11 +108,35 @@ export function controlGroups(options, sourceType) {
           {value:'preset',label:'Layout default'},{value:'zoom',label:'Zoom image'},{value:'lift',label:'Lift card'}
         ]}
       ]),
+      ...(['spiral','ring'].includes(preset)?[
+        select('backFace','Card back',{mirror:'Reversed image',solid:'Solid color'}),
+        swatch('backColor','Back color',['backFace','solid']),
+      ]:[]),
+      ...(preset==='stack'?[]:[
+        select('edgeMode','Stage edges',{preset:'Layout default',hard:'Hard edge',gradient:'Gradient fade'}),
+        {...range('edgeFade','Fade width at each edge',1,40,1,'%'),when:['edgeMode','gradient']},
+      ]),
       { key: 'showTitles', label: 'Show titles', type: 'checkbox' },
       { key: 'background', label: 'Background', type: 'color' },
       { key: 'ink', label: 'Text color', type: 'color' },
       { key: 'accent', label: 'Accent color', type: 'color' },
     ] },
+    ...(preset==='stack'?[]:[{title:'Control styling',fields:[
+      range('controlSize','Button size',44,72,1,'px'),
+      select('controlShape','Button shape',{circle:'Circle',rounded:'Rounded square',square:'Square'}),
+      select('arrowStyle','Arrow style',{arrow:'Arrow',chevron:'Chevron'}),
+      select('controlPalette','Button colors',{theme:'Use layout colors',custom:'Custom'}),
+      swatch('controlFill','Button background',['controlPalette','custom']),
+      swatch('controlInk','Button icon',['controlPalette','custom']),
+    ]}]),
+    {title:'Title styling',fields:[
+      {key:'titleSize',label:'Title size',type:'select',numeric:true,choices:[
+        {value:0,label:'Use layout size'},...[.875,1,1.25,1.5,2,2.5,3,4].map(value=>({value,label:value+' rem'}))
+      ]},
+      select('titleWeight','Title weight',{inherit:'Use layout weight',400:'Regular',500:'Medium',600:'Semibold',700:'Bold'}),
+      select('titlePalette','Title color',{theme:'Use layout color',custom:'Custom'}),
+      swatch('titleColor','Custom title color',['titlePalette','custom']),
+    ]},
   ];
 }
 
@@ -229,6 +263,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   function syncField(field) {
     const { definition, input, output, row } = field;
     const value = current[definition.key];
+    if(definition.when) row.hidden = current[definition.when[0]] !== definition.when[1];
     if (definition.type === 'checkbox') {
       input.checked = Boolean(value);
       return;
@@ -245,7 +280,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
         input.disabled = Boolean(inherited);
       }
       input.value = String(inherited ? current[definition.inherits] : value);
-      const auto = spec.key === 'stageHeight' && spec.min === 0 && Number(input.value) === 0;
+      const auto = ['titleSize','stageHeight'].includes(spec.key) && spec.min === 0 && Number(input.value) === 0;
       const reading = auto ? 'Auto' : `${input.value}${spec.unit || ''}`;
       output.textContent = inherited ? `Inherit · ${reading}` : reading;
       input.setAttribute('aria-valuetext', reading);
@@ -253,7 +288,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     }
     input.value = String(value);
     if (definition.type === 'color') {
-      row.hidden = current.colorSource === 'section';
+      if (!definition.independent) row.hidden = current.colorSource === 'section';
       output.textContent = input.value.toUpperCase();
     }
   }
@@ -283,7 +318,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     if (key === 'galleryHeight') buildGroups();
     if (key === 'colorSource') fields.forEach(syncField);
     else syncField(fields.get(key));
-    for (const field of fields.values()) if (field.definition.inherits === key) syncField(field);
+    for (const field of fields.values()) if (field.definition.inherits === key || field.definition.when?.[0] === key) syncField(field);
     refreshCode();
   }
 
@@ -325,7 +360,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     fields.set(key, field);
     syncField(field);
     input.addEventListener(type === 'range' || type === 'color' ? 'input' : 'change', () => {
-      const value = type === 'range' ? Number(input.value) : type === 'checkbox' ? input.checked : input.value;
+      const value = type === 'range' || definition.numeric ? Number(input.value) : type === 'checkbox' ? input.checked : input.value;
       changeOption(key, value);
     });
     return row;

@@ -107,6 +107,14 @@ export function mountSpiral(ctx) {
   shell.append(root); host.append(shell);
 
   const setAttributes = () => {
+    root.dataset.edgeMode = options.edgeMode;
+    root.dataset.backFace = options.backFace;
+    root.dataset.cornerRadius = options.spiralRadius;
+    root.dataset.borderWidth = options.borderWidth;
+    root.dataset.borderColor = options.spiralRim;
+    root.dataset.backColor = options.backColor;
+    root.style.setProperty('--orbit-card-radius', options.spiralRadius + 'px');
+    root.style.setProperty('--orbit-rim', options.spiralRim);
     shell.style.width = `${bounded(options.containerWidth, 100, 20, 100)}%`;
     stage.style.height = `${bounded(options.stageHeight, 680, 280, 1600)}px`;
     root.style.setProperty('--orbit-card-width', `${bounded(options.cardWidth, 280, 80, 720)}px`);
@@ -215,12 +223,13 @@ export function mountSpiral(ctx) {
 
   return {
     update(nextOptions) {
+      const previous = options;
       options = { ...options, ...nextOptions };
       setAttributes(); carousel.measure();
       root.dispatchEvent(new Event('playground-change'));
       root.dispatchEvent(new Event('slot-guides-change'));
       carousel.updateActive(carousel.active);
-      setPlaying(Boolean(options.autoplay));
+      if (previous.autoplay !== options.autoplay || previous.reducedMotion !== options.reducedMotion) setPlaying(Boolean(options.autoplay));
     },
     goTo(index) { if (!destroyed) carousel.goTo(index); },
     setPlaying,

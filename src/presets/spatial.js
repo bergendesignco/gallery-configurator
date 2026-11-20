@@ -359,6 +359,7 @@ export function mountSpatial(ctx) {
         const flip = proximity * proximity * (50 + depth * 1.3);
         entry.flip += (flip - entry.flip) * ease;
         if (Math.abs(entry.flip - flip) > 0.05) moving = true;
+        card.toggleAttribute("data-gc-back-facing", entry.flip > 90);
         const radialRotation = count === 1 ? 0 : angle * 180 / Math.PI + 90;
         element.style.transform = `translate3d(${entry.x}px,${entry.y}px,0) rotate(${radialRotation}deg)`;
         card.style.transform = `perspective(700px) rotateY(${entry.flip}deg) translateZ(${proximity * 12}px)`;

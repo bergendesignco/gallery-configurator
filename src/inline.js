@@ -49,6 +49,7 @@ function readStyle(text, destination) {
       if (!Number.isFinite(value) || value < bounds.min || value > bounds.max) return null;
     } else if (field.type === 'checkbox' && typeof value !== 'boolean') return null;
     else if (field.type === 'select' && !field.choices.some(choice => choice.value === value)) return null;
+    if (field.type === 'color' && !/^#[0-9a-f]{6}$/i.test(value)) return null;
     next[field.key] = value;
   }
   return next;
@@ -110,7 +111,14 @@ export function startInline() {
     close(false);
     const {source}=record;
     if(!record.mounted) source.items=readSource(source.root,source.type);
-    if (!source.items.length) return;
+    if (!source.items.length) {
+      const message='Add items in Squarespace, then try again';
+      record.button.querySelector('span').textContent=message;
+      record.button.setAttribute('aria-label',message);
+      return;
+    }
+    record.button.querySelector('span').textContent='Configure layout';
+    record.button.setAttribute('aria-label','Configure '+source.name+' layout');
     let initial = record.options || record.installed || settings('arc-tabs',source.type!=='list'?{galleryWidth:'source'}:{});
     if(source.type!=='list' && initial.preset==='stack'){
       initial=settings('arc-tabs',{galleryWidth:'source'});
@@ -240,7 +248,6 @@ export function startInline() {
       button.type='button';button.className='gc-config-launch';button.setAttribute('aria-expanded','false');
       button.setAttribute('aria-label','Configure '+source.name+' layout');
       button.innerHTML='<svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6h7m4 0h5M2 14h3m4 0h9"/><circle cx="11" cy="6" r="2"/><circle cx="7" cy="14" r="2"/></svg><span>Configure layout</span>';
-      if(!source.items.length){button.disabled=true;button.title='Add images in Squarespace to configure this source.';}
       button.addEventListener('click',()=>open(record));anchor.append(button);record.button=button;
       cleanups.push(()=>{button.remove();if(position) anchor.classList.remove('gc-config-position');});
     }

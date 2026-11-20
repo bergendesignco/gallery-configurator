@@ -6,7 +6,9 @@ const shapes = {
 };
 
 function svg(name) {
-  return `<svg class="gc-transport-icon gc-icon-${name}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${shapes[name]}</svg>`;
+  const chevron = {previous:"m12.5 4-6 6 6 6",next:"m7.5 4 6 6-6 6"}[name];
+  const extra = chevron ? `<path class="gc-chevron" display="none" d="${chevron}"/>` : "";
+  return `<svg class="gc-transport-icon gc-icon-${name}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${shapes[name]}${extra}</svg>`;
 }
 
 /** Playback shows the action corresponding to the button's data-paused state. */

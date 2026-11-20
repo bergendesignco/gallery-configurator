@@ -1,13 +1,13 @@
 # Gallery Configurator
 
-Preview advanced layouts directly on native Squarespace Simple List Sections and Gallery Blocks. A floating panel controls the layout, size, spacing, motion, navigation and card appearance.
+Preview advanced layouts directly on native Squarespace Simple List Sections, Gallery Blocks and blog Summary Blocks. A floating panel controls the layout, size, spacing, motion, navigation and card appearance.
 
 ## Try it on a page
 
 Paste these two lines into **Page Settings → Advanced → Page Header Code Injection**, save, and reload the page outside Squarespace Edit mode.
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.5.0/dist/gallery-inline.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.6.0/dist/gallery-inline.js"></script>
 <script type="application/json" data-gallery-configure>{}</script>
 ```
 
@@ -31,7 +31,7 @@ Alternatively, put the CDN script once in **site-wide Footer Code Injection**. T
 
 If upgrading from the large inline installer, replace that installer with the CDN script. Use one installer per page. Pages without either Gallery Configurator marker keep their normal content.
 
-The URL is pinned to `v0.5.0`. Update the version in your script URL when you choose to install a newer release.
+The URL is pinned to `v0.6.0`. Update the version in your script URL when you choose to install a newer release.
 
 ## Controls
 
@@ -41,6 +41,10 @@ The URL is pinned to `v0.5.0`. Update the version in your script URL when you ch
 - **Section theme** and **Native list / site type** use the source section's Squarespace colors and typography.
 - **Navigation → Auto** uses titles when all items have them and dots when a title is missing. This applies to Arc with tabs and Timed carousel.
 - **Copy style / Paste style** transfers layout and appearance settings between sources. The destination supplies its content, links, click action, colors and typography.
+
+**Appearance** includes corner radius, borders and image fit. DOM layouts also offer shadows and hover effects. Spiral and Interactive ring support solid or mirrored backs. Stage edges can use the layout default, a hard cutoff or an adjustable gradient on moving galleries.
+
+**Control styling** sets the navigation button size, shape, arrow and colors. **Title styling** controls size in rem, weight and color. Leave the layout defaults selected to follow the section theme and native typography.
 
 ## Layouts
 
