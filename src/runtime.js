@@ -1,3 +1,4 @@
+import {loadPost} from './summary-post.js';
 import {mountCarousel} from './presets/carousels.js';
 import {mountSpatial} from './presets/spatial.js';
 import {mountStack} from './presets/stack.js';
@@ -98,7 +99,9 @@ export function mountGallery(host,items,initial={},nativeList=null){
   const content=document.createElement('div');content.className='gc-dialog-content';const media=document.createElement('div');media.className='gc-dialog-media';if(item.src){media.append(createImage(item));content.append(media);}
   const body=document.createElement('div');body.className='gc-dialog-copy';
   if(item.title){const h=document.createElement('h2');h.textContent=item.title;body.append(h);}
-  if(item.description){const p=document.createElement('div');p.innerHTML=cleanHTML(item.description);body.append(p);}
+  if(item.postUrl){
+   const article=document.createElement('article');body.append(article);loadPost(article,item);
+  }else if(item.description){const p=document.createElement('div');p.innerHTML=cleanHTML(item.description);body.append(p);}
   if(item.link){const a=document.createElement('a');a.href=safeLink(item.link);a.textContent=item.buttonLabel||'Open link';a.target='_blank';a.rel='noopener noreferrer';body.append(a);}
   const count=document.createElement('p');count.className='gc-dialog-count';count.textContent=`${index+1} / ${items.length}`;body.append(count);content.append(body);dialog.append(close,content);attachGalleryDialog(host,dialog);dialog.showModal();engine?.setSuspended?.(true);loadNativeImage(media.querySelector('img'));close.focus();
   dialog.addEventListener('cancel',e=>{e.preventDefault();closeDialog();});dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDialog();}});
@@ -145,7 +148,7 @@ export function mountGallery(host,items,initial={},nativeList=null){
   const reusable=nativeList&&options.preset!=='spiral'?nativeList:null;
   if(reusable)reusable.begin();
   else if(nativeList)nativeList.track.classList.add('gc-native-items-hidden');
-  const ctx={host,items,initialIndex,nativeList:reusable,attachDialog:dialog=>attachGalleryDialog(host,dialog),options:renderOptions(),makeCard,loadImage:loadNativeImage,onChange(index){active=index;options.onChange?.(index);}};
+  const ctx={host,items,openPost:open,initialIndex,nativeList:reusable,attachDialog:dialog=>attachGalleryDialog(host,dialog),options:renderOptions(),makeCard,loadImage:loadNativeImage,onChange(index){active=index;options.onChange?.(index);}};
   if(!items.length){const p=document.createElement('p');p.className='gc-empty';p.textContent='Add images to your source to start exploring.';host.append(p);return;}
   if(options.preset==='spiral')engine=mountSpiral(ctx);
   else if(options.preset==='stack')engine=mountStack(ctx);
@@ -278,7 +281,7 @@ export function embed({selector,type='gallery',options={}}={}){
    restoreViewport=fitViewport(slot,host,source,type);
   }
  }
- function blockBound(){return type==='gallery' && current.preset!=='stack' && current.galleryHeight!=='custom' && !!source.closest('.fluid-engine > .fe-block');}
+ function blockBound(){return type!=='list' && current.preset!=='stack' && current.galleryHeight!=='custom' && !!source.closest('.fluid-engine > .fe-block');}
  function syncBlock(){
   if(blockBound()){if(!restoreBlock)restoreBlock=fitBlock(slot,host,source);}
   else {restoreBlock?.();restoreBlock=null;}

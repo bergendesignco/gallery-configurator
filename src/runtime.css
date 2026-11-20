@@ -88,3 +88,4 @@
 .sqs-edit-mode-active .gc-edit-preview .gc-native-items-hidden{display:none!important}
 
 .gc-stage.gc-hide-controls :is(.orbit-controls, .gc-carousel-controls, .gc-carousel-tabs, .gc-spatial-nav) { display: none !important; }
+.gc-dialog-copy article img { max-width: 100%; height: auto; }

@@ -13,7 +13,7 @@ export function imageData(img){
  const attrs={};for(const name of ['data-src','data-image','data-image-dimensions','data-image-focal-point','width','height','srcset','sizes'])if(img.hasAttribute(name))attrs[name]=img.getAttribute(name);
  return {src:img.getAttribute('data-src')||img.getAttribute('data-image')||img.getAttribute('src')||'',alt:img.getAttribute('alt')||'',imageAttrs:attrs};
 }
-const nativeRoots={list:'section.user-items-list-section',gallery:'.sqs-block-gallery'};
+const nativeRoots={list:'section.user-items-list-section',gallery:'.sqs-block-gallery',summary:'.sqs-block-summary-v2'};
 
 // Resolve a section selector or a block selector to one owning Squarespace source.
 export function sourcePlacement(target,type){
@@ -28,6 +28,12 @@ export function sourcePlacement(target,type){
  const content=type==='list'?source:source.querySelector(':scope > .sqs-block-content');
  if(!content)return null;
  const owned=selector=>Array.from(content.querySelectorAll(selector)).filter(node=>node.closest(rootSelector)===source&&(!node.closest('.gc-embed')||node.hasAttribute('data-gc-native-track')));
+ if(type==='summary'){
+  const originals=owned('.summary-block-wrapper');
+  if(originals.length!==1)return null;
+  const rows=owned('.summary-item').filter(row=>originals[0].contains(row)&&!row.closest('.sqs-gallery-design-carousel-slide-clone,.slick-cloned'));
+  return {source,originals,rows};
+ }
  const rowSelector=type==='list'?'.list-item':'.slide';
  let originals=owned(type==='list'?'ul.user-items-list-item-container.user-items-list-simple':'.sqs-gallery-container');
  if(type==='gallery'&&!originals.length)originals=owned('.sqs-gallery');
@@ -46,11 +52,16 @@ export function readSource(root,type,base=location.href){
  const rows=sourcePlacement(root,type)?.rows||[];
  return rows.map(row=>{
   const img=row.querySelector('img[data-src],img[data-image],img');
+  if(type==='summary'){
+   const anchor=row.querySelector('.summary-title-link,.summary-thumbnail-container,.summary-read-more-link');
+   const link=safeLink(anchor?.getAttribute('href'),base);
+   return {...imageData(img),title:row.querySelector('.summary-title')?.textContent.trim()||img?.alt||'',description:cleanHTML(row.querySelector('.summary-excerpt')?.innerHTML),link,postUrl:link,buttonLabel:'Read post'};
+  }
   const title=row.querySelector(type==='list'?'.list-item-content__title':'.image-slide-title')?.textContent.trim()||'';
   const description=cleanHTML(row.querySelector(type==='list'?'.list-item-content__description':'.image-slide-description')?.innerHTML||'');
   const link=row.querySelector(type==='list'?'.list-item-content__button':'.image-slide-anchor');
   return {...imageData(img),title,description,link:safeLink(link?.getAttribute('href'),base),buttonLabel:type==='list'?(link?.textContent.trim()||''):''};
- }).filter(item=>type==='list'||item.src);
+ }).filter(item=>type==='summary'?Boolean(item.link):type==='list'||item.src);
 }
 function sourceSelector(root,type){
  const value=type==='list'?root.getAttribute('data-section-id'):root.id;
@@ -59,14 +70,14 @@ function sourceSelector(root,type){
  return root.ownerDocument.querySelectorAll(selector).length===1?selector:'';
 }
 export function discoverSources(doc=document){
- const counts={list:0,gallery:0};
+ const counts={list:0,gallery:0,summary:0};
  return Array.from(doc.querySelectorAll(Object.values(nativeRoots).join(',')))
   .filter(root=>!root.closest('.gc-embed'))
    .flatMap(root=>{
-   const type=root.matches(nativeRoots.list)?'list':'gallery';
+   const type=root.matches(nativeRoots.list)?'list':root.matches(nativeRoots.summary)?'summary':'gallery';
    const selector=sourceSelector(root,type);
    if(!selector||!sourcePlacement(root,type))return [];
-   const count=++counts[type],label=type==='list'?'List Section':'Gallery Block';
+   const count=++counts[type],label=type==='list'?'List Section':type==='summary'?'Summary Block':'Gallery Block';
    return {name:label+(count>1?' '+count:''),type,selector,root,items:readSource(root,type)};
   });
 }

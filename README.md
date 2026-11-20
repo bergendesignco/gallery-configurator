@@ -7,7 +7,7 @@ Preview advanced layouts directly on native Squarespace Simple List Sections and
 Paste these two lines into **Page Settings → Advanced → Page Header Code Injection**, save, and reload the page outside Squarespace Edit mode.
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.4.8/dist/gallery-inline.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.5.0/dist/gallery-inline.js"></script>
 <script type="application/json" data-gallery-configure>{}</script>
 ```
 
@@ -31,7 +31,7 @@ Alternatively, put the CDN script once in **site-wide Footer Code Injection**. T
 
 If upgrading from the large inline installer, replace that installer with the CDN script. Use one installer per page. Pages without either Gallery Configurator marker keep their normal content.
 
-The URL is pinned to `v0.4.8`. Update the version in your script URL when you choose to install a newer release.
+The URL is pinned to `v0.5.0`. Update the version in your script URL when you choose to install a newer release.
 
 ## Controls
 
@@ -80,3 +80,5 @@ Existing explicit full-page width settings are preserved. Existing Fluid Engine 
 - Uses the native GetCollectionSettings / SaveCollectionSettings envelope and the current browser session.
 - Updates the selected gallery only; reads the saved header back before reporting success.
 - Native Squarespace trims outer header whitespace; verification permits that normalization.
+
+A blog-linked **Summary Block** can also supply cards. Select the blog in the native Summary Block, then use **Configure layout → Interaction → Click action → Open blog post**. The popup loads the post body on demand, including text, links and images. The full-post link is available for interactive blocks and embeds. **Interaction → Show controls** toggles the carousel navigation.

@@ -34,7 +34,7 @@ export function controlGroups(options, sourceType) {
     range('cardWidth', 'Card width', 80, preset === 'timed' ? 960 : preset === 'spiral' ? 720 : 560, 1, 'px'),
     range('stageHeight', minimum ? 'Minimum gallery height' : 'Gallery height', minimum ? 0 : 300, 1200, 1, 'px'),
   ];
-  if(sourceType==='gallery'){
+  if(sourceType!=='list'){
     geometry.splice(1,0,{key:'galleryHeight',label:'Height sizing',type:'select',choices:[{value:'source',label:'Follow block'},{value:'custom',label:'Custom height'}]});
     if(options.galleryHeight!=='custom')geometry.splice(geometry.findIndex(f=>f.key==='stageHeight'),1);
   }
@@ -50,7 +50,7 @@ export function controlGroups(options, sourceType) {
 
   const interaction = [{
     key: 'clickAction', label: 'Click action', type: 'select', choices: [
-      { value: 'preview', label: preset === 'showcase' ? 'Open details panel' : 'Open image preview' },
+      { value: 'preview', label: sourceType==='summary' ? 'Open blog post' : preset === 'showcase' ? 'Open details panel' : 'Open image preview' },
       { value: 'link', label: 'Follow item link' },
       { value: 'none', label: 'None' },
     ],
@@ -111,7 +111,7 @@ function optionsWithDefaults(options) {
 }
 
 function describeSource(source) {
-  const type = source.type === 'list' ? 'List Section' : 'Gallery Block';
+  const type = source.type === 'list' ? 'List Section' : source.type==='summary'?'Summary Block':'Gallery Block';
   const name = source.name?.trim() || type;
   const count = source.items?.length || 0;
   const target = name.toLowerCase().includes(type.toLowerCase()) ? name : `${name} · ${type}`;
@@ -169,7 +169,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   const presetRow = node('label', 'preset-row');
   const presetSelect = node('select', 'preset-select');
   presetSelect.setAttribute('aria-label', 'Layout');
-  for (const preset of presets.filter(preset=>source.type!=='gallery'||preset.id!=='stack')) {
+  for (const preset of presets.filter(preset=>source.type==='list'||preset.id!=='stack')) {
     const option = node('option', '', preset.name);
     option.value = preset.id;
     presetSelect.append(option);

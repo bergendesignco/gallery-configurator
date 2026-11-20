@@ -3,7 +3,7 @@
 export function fitViewport(slot, host, source, type) {
   const document = source.ownerDocument;
   const view = document.defaultView;
-  const cell = type === 'gallery' ? source.closest('.fluid-engine > .fe-block') : null;
+  const cell = type !== 'list' ? source.closest('.fluid-engine > .fe-block') : null;
   cell?.classList.add('gc-viewport-cell');
 
   // Only release clippers belonging to this source. A full-width section or

@@ -150,6 +150,7 @@ export function mountSpiral(ctx) {
         if (link) location.assign(link);
         return;
       }
+      if(item.postUrl){ctx.openPost(item,index);return;}
       super.open(index);
       const title = this.dialog.querySelector('.project-title');
       title.hidden = !item.title;

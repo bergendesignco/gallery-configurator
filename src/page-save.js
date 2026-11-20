@@ -11,7 +11,7 @@ function readLayout(attrs, content) {
   if (parsed.get('type') !== 'application/json') throw Error('An existing gallery setting is not JSON. Check the page header before saving.');
   let data;
   try { data = JSON.parse(content); } catch { throw Error('An existing gallery setting contains invalid JSON. Check the page header before saving.'); }
-  if (data?.v !== 1 || typeof data.selector !== 'string' || !['list', 'gallery'].includes(data.type) || !data.options) {
+  if (data?.v !== 1 || typeof data.selector !== 'string' || !['list', 'gallery', 'summary'].includes(data.type) || !data.options) {
     throw Error('An existing gallery setting has an unsupported format. Check the page header before saving.');
   }
   return data;

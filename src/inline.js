@@ -111,8 +111,8 @@ export function startInline() {
     const {source}=record;
     if(!record.mounted) source.items=readSource(source.root,source.type);
     if (!source.items.length) return;
-    let initial = record.options || record.installed || settings('arc-tabs',source.type==='gallery'?{galleryWidth:'source'}:{});
-    if(source.type==='gallery' && initial.preset==='stack'){
+    let initial = record.options || record.installed || settings('arc-tabs',source.type!=='list'?{galleryWidth:'source'}:{});
+    if(source.type!=='list' && initial.preset==='stack'){
       initial=settings('arc-tabs',{galleryWidth:'source'});
       apply(record,initial);
     }
@@ -125,7 +125,7 @@ export function startInline() {
     };
     panel=createPanel({source,options:{...record.options},onClose:()=>close(),onRestore:()=>restore(record),
       onPreset:id=>{
-        if (!layouts.has(id)||(source.type==='gallery'&&id==='stack')) return;
+        if (!layouts.has(id)||(source.type!=='list'&&id==='stack')) return;
         record.presets.set(record.options.preset,{...record.options});
         change({...(record.presets.get(id)||settings(id)),galleryWidth:record.options.galleryWidth,galleryHeight:record.options.galleryHeight});
         panel.update({source,options:{...record.options}});
@@ -163,7 +163,7 @@ export function startInline() {
       getStyle:()=>copyStyle(record.options),
       applyStyle:text=>{
         const next=readStyle(text,record.options);
-        if (!next || (source.type==='gallery'&&next.preset==='stack')) return false;
+        if (!next || (source.type!=='list'&&next.preset==='stack')) return false;
         record.presets.set(record.options.preset,{...record.options});
         change(next);
         panel.update({source,options:record.options});
