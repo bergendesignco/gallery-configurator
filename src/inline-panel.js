@@ -20,6 +20,12 @@ function button(className, text, label) {
   return element;
 }
 
+function selectBox(input) {
+  const box = node('span', 'select-box');
+  box.append(input);
+  return box;
+}
+
 function range(key, label, min, max, step, unit = '') {
   return { key, label, type: 'range', min, max, step, unit };
 }
@@ -70,7 +76,7 @@ export function controlGroups(options, sourceType) {
   if (preset !== 'stack') {
     interaction.push({ key: 'showControls', label: 'Show controls', type: 'checkbox' });
     interaction.push({ key: 'autoplay', label: 'Autoplay', type: 'checkbox' });
-    if (preset !== 'spiral') interaction.push(range('duration', 'Time per image', 2, 15, 0.5, 's'));
+    if (preset !== 'spiral') interaction.push({...range('duration', 'Time per image', 2, 15, 0.5, 's'), when:['autoplay',true]});
   }
   interaction.push({ key: 'reducedMotion', label: 'Reduce motion', type: 'checkbox' });
 
@@ -255,7 +261,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     option.value = preset.id;
     presetSelect.append(option);
   }
-  presetRow.append(node('span', 'field-label', 'Layout'), presetSelect);
+  presetRow.append(node('span', 'field-label', 'Layout'), selectBox(presetSelect));
   const groupArea = node('div', 'groups');
   const styleActions = node('div', 'style-actions');
   const copyStyle = button('text-button', 'Copy style');
@@ -268,7 +274,17 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   styleText.spellcheck = false;
   const applyButton = button('secondary', 'Apply style');
   const cancelTransfer = button('text-button', 'Close', 'Close style transfer');
-  transfer.append(styleText, applyButton, cancelTransfer);
+  const styleError = node('p','field-error','Paste a gallery style created with Copy style.');
+  styleError.id = 'gc-style-error';
+  styleError.hidden = true;
+  styleError.setAttribute('role','alert');
+  function clearStyleError() {
+    styleError.hidden = true;
+    styleText.removeAttribute('aria-invalid');
+    styleText.removeAttribute('aria-describedby');
+  }
+  styleText.addEventListener('input', clearStyleError);
+  transfer.append(styleText, styleError, applyButton, cancelTransfer);
   scroll.append(presetRow, styleActions, transfer, groupArea);
 
   const footer = node('footer', 'footer');
@@ -369,7 +385,10 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     } else {
       onOption(key, value);
     }
-    if (key === 'galleryHeight') buildGroups();
+    if (key === 'galleryHeight') {
+      buildGroups();
+      fields.get(key).input.focus({preventScroll:true});
+    }
     if (key === 'colorSource') fields.forEach(syncField);
     else syncField(fields.get(key));
     for (const field of fields.values()) if (field.definition.inherits === key || field.definition.when?.[0] === key) syncField(field);
@@ -399,7 +418,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     }
     row.append(name);
     if (output) row.append(output);
-    row.append(input);
+    row.append(type === 'select' ? selectBox(input) : input);
     const field = { definition, input, output, row };
     if (definition.inherits) {
       const enable = node('input');
@@ -487,7 +506,13 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     }
     if (document.querySelector('dialog[open]') || event.composedPath().some(target => target?.getAttribute?.('aria-modal') === 'true')) return;
     event.preventDefault();
-    dismiss(onClose);
+    if (!transfer.hidden && (transfer.contains(shadow.activeElement) || codeView.hidden)) {
+      transfer.hidden = true;
+      (styleText.readOnly ? copyStyle : pasteStyle).focus();
+    } else if (!codeView.hidden) {
+      showCode(false);
+      view.focus();
+    } else dismiss(onClose);
   }
 
   minimize.addEventListener('click', () => {
@@ -503,6 +528,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   presetSelect.addEventListener('change', () => onPreset(presetSelect.value));
   view.addEventListener('click', () => showCode(codeView.hidden));
   function openTransfer(readOnly, text) {
+    clearStyleError();
     transfer.hidden = false;
     applyButton.hidden = readOnly;
     styleText.readOnly = readOnly;
@@ -528,11 +554,13 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   });
   cancelTransfer.addEventListener('click', () => {
     transfer.hidden = true;
-    pasteStyle.focus();
+    (styleText.readOnly ? copyStyle : pasteStyle).focus();
   });
   applyButton.addEventListener('click', () => {
     if (!applyStyle(styleText.value)) {
-      status.textContent = 'Paste a style from Copy style.';
+      styleError.hidden = false;
+      styleText.setAttribute('aria-invalid','true');
+      styleText.setAttribute('aria-describedby',styleError.id);
       styleText.focus();
       return;
     }
