@@ -118,3 +118,6 @@ button:disabled { cursor:wait; opacity:.65; }
 .save-state { display:flex; align-items:center; gap:5px; margin-top:3px; font-size:11px; color:#75440d; }
 .save-state::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
 .save-state[data-saved=true] { color:#346249; }
+
+.removal p {margin:0 0 10px;font-size:13px}
+.removal button {margin:0 6px 4px 0}

@@ -254,7 +254,13 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   const removeLayout = button('text-button', 'Remove layout');
   removeLayout.hidden = getSaveState() === 'Not saved yet';
   backupActions.append(view, backup, removeLayout);
-  footer.append(exportActions, backupActions, codeView, footerLine);
+  const removal = node('div', 'removal');
+  removal.hidden = true;
+  removal.append(node('p', '', 'Restore the native ' + currentSource.name + ' and remove its saved layout from this page?'));
+  const cancelRemoval = button('secondary','Keep layout');
+  const confirmRemoval = button('secondary','Remove saved layout');
+  removal.append(cancelRemoval, confirmRemoval);
+  footer.append(exportActions, backupActions, codeView, removal, footerLine);
   controls.append(scroll, footer);
   panel.append(header, controls);
   shadow.append(style, panel);
@@ -425,6 +431,11 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
 
   function escapePanel(event) {
     if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing) return;
+    if (!removal.hidden) {
+      event.preventDefault();
+      setRemoval(false);
+      return;
+    }
     if (document.querySelector('dialog[open]') || event.composedPath().some(target => target?.getAttribute?.('aria-modal') === 'true')) return;
     event.preventDefault();
     dismiss(onClose);
@@ -490,7 +501,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   async function persist(remove = false) {
-    if(remove && !window.confirm('Remove the saved layout from this '+currentSource.name+' and restore its native appearance?'))return;
+    if (remove) setRemoval(false);
     if(save.disabled) return;
     save.disabled = reset.disabled = removeLayout.disabled = true;
     scroll.inert = true;
@@ -516,7 +527,18 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     }
   }
   save.addEventListener('click', () => persist());
-  removeLayout.addEventListener('click', () => persist(true));
+  function setRemoval(open) {
+    removal.hidden = !open;
+    scroll.inert = open;
+    exportActions.hidden = backupActions.hidden = footerLine.hidden = open;
+    if (open) {
+      showCode(false);
+      cancelRemoval.focus();
+    } else removeLayout.focus();
+  }
+  removeLayout.addEventListener('click', () => setRemoval(true));
+  cancelRemoval.addEventListener('click', () => setRemoval(false));
+  confirmRemoval.addEventListener('click', () => persist(true));
   copy.addEventListener('click', async () => {
     const attempt = ++copyAttempt;
     const snippet = getCode();
