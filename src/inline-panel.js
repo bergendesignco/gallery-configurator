@@ -152,6 +152,53 @@ function describeSource(source) {
   return `${target} · ${count} ${count === 1 ? 'item' : 'items'}`;
 }
 
+// Editor notices can cover the iframe without changing its viewport size.
+function followEditorViewport(panel) {
+  const frame = window.frameElement;
+  if (!frame || frame.id !== 'sqs-site-frame') return () => {};
+  const outer = frame.ownerDocument;
+  const editor = outer.defaultView;
+  let tick = 0;
+  function measure() {
+    tick = 0;
+    const rect = frame.getBoundingClientRect();
+    if (!rect.width || !rect.height || !frame.offsetHeight) return;
+    const scale = rect.height / frame.offsetHeight;
+    const panelRect = panel.getBoundingClientRect();
+    const scaleX = rect.width / frame.offsetWidth;
+    const bottom = Math.min(rect.bottom, editor.innerHeight);
+    let usableBottom = bottom;
+    for (const fraction of [.1, .5, .9]) {
+      const x = rect.left + (panelRect.left + panelRect.width * fraction) * scaleX;
+      let hit = outer.elementFromPoint(x, bottom - 2);
+      if (!hit || hit === frame) continue;
+      while (hit && !hit.contains(frame)) {
+        const box = hit.getBoundingClientRect();
+        if (box.bottom >= bottom - 2 && box.height > 0 && box.height < rect.height / 2)
+          usableBottom = Math.min(usableBottom, box.top);
+        hit = hit.parentElement;
+      }
+    }
+    panel.style.setProperty('--gc-editor-bottom', Math.max(0, Math.ceil((rect.bottom - usableBottom) / scale)) + 'px');
+  }
+  function schedule() { if (!tick) tick = requestAnimationFrame(measure); }
+  const resized = new ResizeObserver(schedule);
+  resized.observe(frame);
+  resized.observe(outer.documentElement);
+  const changed = new MutationObserver(schedule);
+  changed.observe(outer.body, {subtree:true, childList:true, attributes:true, attributeFilter:['hidden','class','style']});
+  editor.addEventListener('resize', schedule);
+  editor.addEventListener('transitionend', schedule);
+  measure();
+  return () => {
+    resized.disconnect();
+    changed.disconnect();
+    editor.removeEventListener('resize', schedule);
+    editor.removeEventListener('transitionend', schedule);
+    cancelAnimationFrame(tick);
+  };
+}
+
 /** Mount the author controls beside the currently selected source. */
 export function createPanel({ source, options, onPreset, onOption, onClose, onRestore, onSave, getSaveState, getCode, getStyle, applyStyle }) {
   const previousFocus = document.activeElement;
@@ -265,6 +312,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   panel.append(header, controls);
   shadow.append(style, panel);
   document.body.append(element);
+  const stopFollowingViewport = followEditorViewport(element);
 
   function syncField(field) {
     const { definition, input, output, row } = field;
@@ -419,6 +467,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     copyAttempt += 1;
     const returnFocus = document.activeElement === element;
     document.removeEventListener('keydown', escapePanel);
+    stopFollowingViewport();
     element.remove();
     if (returnFocus && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
   }
