@@ -1,3 +1,4 @@
+import {cardDesignGroups,cardDesignLayouts,designColors,themeSwatches} from './card-design.js';
 import { defaults, presets, spiralControls, spiralDefaults, usesMinimumHeight } from './runtime.js';
 import panelCSS from './inline-panel.css';
 
@@ -80,7 +81,8 @@ export function controlGroups(options, sourceType) {
   }
   interaction.push({ key: 'reducedMotion', label: 'Reduce motion', type: 'checkbox' });
 
-  return [
+  const enhanced=cardDesignLayouts.has(preset);
+  const sections=[
     { title: 'Size & spacing', fields: geometry },
     { title: 'Mobile overrides', fields: [
       { ...geometry.find(field => field.key === 'cardWidth'), key: 'mobileCardWidth', label: 'Mobile card width', inherits: 'cardWidth' },
@@ -122,7 +124,7 @@ export function controlGroups(options, sourceType) {
         select('edgeMode','Stage edges',{preset:'Layout default',hard:'Hard edge',gradient:'Gradient fade'}),
         {...range('edgeFade','Fade width at each edge',1,40,1,'%'),when:['edgeMode','gradient']},
       ]),
-      { key: 'showTitles', label: 'Show titles', type: 'checkbox' },
+      ...(enhanced?[]:[{ key: 'showTitles', label: 'Show titles', type: 'checkbox' }]),
       { key: 'background', label: 'Background', type: 'color' },
       { key: 'ink', label: 'Text color', type: 'color' },
       { key: 'accent', label: 'Accent color', type: 'color' },
@@ -136,14 +138,27 @@ export function controlGroups(options, sourceType) {
       swatch('controlInk','Button icon',['controlPalette','custom']),
     ]}]),
     {title:'Title styling',fields:[
-      {key:'titleSize',label:'Title size',type:'select',numeric:true,choices:[
+      ...(enhanced?[range('titleSize','Title size',0,4,.05,'rem')]:[{key:'titleSize',label:'Title size',type:'select',numeric:true,choices:[
         {value:0,label:'Use layout size'},...[.875,1,1.25,1.5,2,2.5,3,4].map(value=>({value,label:value+' rem'}))
-      ]},
+      ]}]),
       select('titleWeight','Title weight',{inherit:'Use layout weight',400:'Regular',500:'Medium',600:'Semibold',700:'Bold'}),
       select('titlePalette','Title color',{theme:'Use layout color',custom:'Custom'}),
       swatch('titleColor','Custom title color',['titlePalette','custom']),
     ]},
+    ...(enhanced?cardDesignGroups({range,select,swatch}):[]),
   ];
+  if(enhanced) for(const section of sections){
+    section.fields=section.fields.flatMap(field=>{
+      if(field.type!=='color'||!designColors.includes(field.key))return [field];
+      const when=field.when||(!field.independent?['colorSource','custom']:undefined);
+      return [
+        {...select(field.key+'Swatch',field.label+' palette',{custom:'Custom',...themeSwatches}),type:'palette',when},
+        {...field,when,customFor:field.key+'Swatch'},
+        {...range(field.key+'Opacity',field.label+' opacity',0,100,1,'%'),when},
+      ];
+    });
+  }
+  return sections;
 }
 
 function optionsWithDefaults(options) {
@@ -334,6 +349,11 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     const { definition, input, output, row } = field;
     const value = current[definition.key];
     if(definition.when) row.hidden = current[definition.when[0]] !== definition.when[1];
+    if(definition.type==='palette'){
+      for(const chip of input.children)chip.setAttribute('aria-pressed',String(chip.value===value));
+      return;
+    }
+    if(definition.customFor && current[definition.customFor]!=='custom'){row.hidden=true;return;}
     if (definition.type === 'checkbox') {
       input.checked = Boolean(value);
       return;
@@ -350,7 +370,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
         input.disabled = Boolean(inherited);
       }
       input.value = String(inherited ? current[definition.inherits] : value);
-      const auto = ['titleSize','stageHeight'].includes(spec.key) && spec.min === 0 && Number(input.value) === 0;
+      const auto = ['descriptionSize','popupPadding','titleSize','stageHeight'].includes(spec.key) && spec.min === 0 && Number(input.value) === 0;
       const reading = auto ? 'Auto' : `${input.value}${spec.unit || ''}`;
       output.textContent = inherited ? `Inherit · ${reading}` : reading;
       input.setAttribute('aria-valuetext', reading);
@@ -391,14 +411,29 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     }
     if (key === 'colorSource') fields.forEach(syncField);
     else syncField(fields.get(key));
-    for (const field of fields.values()) if (field.definition.inherits === key || field.definition.when?.[0] === key) syncField(field);
+    for (const field of fields.values()) if (field.definition.inherits === key || field.definition.when?.[0] === key || field.definition.customFor===key) syncField(field);
     refreshCode();
   }
 
   function makeField(definition) {
     const { key, label, type } = definition;
-    const row = node(definition.inherits ? 'div' : 'label', `field field-${type}`);
+    const row = node(definition.inherits || type==='palette' ? 'div' : 'label', `field field-${type}`);
     const name = node('span', 'field-label', label);
+    if(type==='palette'){
+      const input=node('div','palette-chips');
+      const theme=getComputedStyle(currentSource.root);
+      input.setAttribute('role','group');input.setAttribute('aria-label',label);
+      for(const choice of definition.choices){
+        const chip=button('palette-chip',choice.value==='custom'?'+':'',choice.label);
+        chip.value=choice.value;chip.title=choice.label;
+        const hsl=theme.getPropertyValue('--'+choice.value+'-hsl').trim();
+        if(hsl)chip.style.backgroundColor='hsl('+hsl+')';
+        else if(choice.value!=='custom')chip.textContent=choice.label;
+        chip.addEventListener('click',()=>changeOption(key,choice.value));input.append(chip);
+      }
+      row.append(name,input);
+      const field={definition,row,input};fields.set(key,field);syncField(field);return row;
+    }
     const input = node(type === 'select' ? 'select' : 'input');
     input.setAttribute('aria-label', label);
     input.dataset.option = key;

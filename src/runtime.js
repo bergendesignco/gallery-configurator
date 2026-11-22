@@ -1,3 +1,4 @@
+import {cardDesignDefaults,resolveDesignColors} from './card-design.js';
 import {loadPost} from './summary-post.js';
 import {mountCarousel} from './presets/carousels.js';
 import {mountSpatial} from './presets/spatial.js';
@@ -31,7 +32,7 @@ export const presets=[
 {id:'spiral',name:'Spiral carousel',category:'Rotate',hint:'Drag to rotate · Click the active image to open',width:280},
 {id:'ring',name:'Interactive ring',category:'Hover',hint:'Move over the images · Drag to rotate',width:150},
 {id:'angled',name:'Angled gallery',category:'Perspective',hint:'Drag to explore · Hover to bring an image forward',width:240}];
-export const defaults={...appearanceDefaults,colorSource:'custom',typeSource:'preset',preset:'arc-tabs',galleryWidth:'full',galleryHeight:'source',navigation:'auto',showControls:true,cardWidth:360,gap:28,mobileCardWidth:null,mobileGap:null,radius:16,depth:48,stageHeight:0,duration:5,autoplay:false,showTitles:true,fit:'cover',clickAction:'preview',background:'#edf0f4',ink:'#1b2838',accent:'#345bf2',reducedMotion:false};
+export const defaults={...cardDesignDefaults,...appearanceDefaults,colorSource:'custom',typeSource:'preset',preset:'arc-tabs',galleryWidth:'full',galleryHeight:'source',navigation:'auto',showControls:true,cardWidth:360,gap:28,mobileCardWidth:null,mobileGap:null,radius:16,depth:48,stageHeight:0,duration:5,autoplay:false,showTitles:true,fit:'cover',clickAction:'preview',background:'#edf0f4',ink:'#1b2838',accent:'#345bf2',reducedMotion:false};
 export function usesMinimumHeight(preset) {
  return ['infinite','arc','arc-tabs','showcase','timed'].includes(preset);
 }
@@ -96,20 +97,20 @@ export function mountGallery(host,items,initial={},nativeList=null){
   restoreFocus=document.activeElement;if(dialog)closeDialog();
   dialog=document.createElement('dialog');dialog.className='gc-dialog'+(options.preset==='showcase'?' gc-dialog-drawer':'');dialog.setAttribute('aria-label',item.title||'Image preview');
   const close=document.createElement('button');close.className='gc-dialog-close';close.type='button';close.textContent='Close ×';close.addEventListener('click',closeDialog);
-  const content=document.createElement('div');content.className='gc-dialog-content';const media=document.createElement('div');media.className='gc-dialog-media';if(item.src){media.append(createImage(item));content.append(media);}
+  const content=document.createElement('div');content.className='gc-dialog-content';const media=document.createElement('div');media.className='gc-dialog-media';if(item.src && options.popupImage!==false){media.append(createImage(item));content.append(media);}
   const body=document.createElement('div');body.className='gc-dialog-copy';
-  if(item.title){const h=document.createElement('h2');h.textContent=item.title;body.append(h);}
-  if(item.postUrl){
+  if(item.title && options.popupTitle!==false){const h=document.createElement('h2');h.textContent=item.title;body.append(h);}
+  if(item.postUrl && options.popupDescription!==false){
    const article=document.createElement('article');body.append(article);loadPost(article,item);
-  }else if(item.description){const p=document.createElement('div');p.innerHTML=cleanHTML(item.description);body.append(p);}
-  if(item.link){const a=document.createElement('a');a.href=safeLink(item.link);a.textContent=item.buttonLabel||'Open link';a.target='_blank';a.rel='noopener noreferrer';body.append(a);}
+  }else if(item.description && options.popupDescription!==false){const p=document.createElement('div');p.innerHTML=cleanHTML(item.description);body.append(p);}
+  if(item.link && options.popupButton!==false){const a=document.createElement('a');a.href=safeLink(item.link);a.textContent=item.buttonLabel||'Open link';a.target='_blank';a.rel='noopener noreferrer';body.append(a);}
   const count=document.createElement('p');count.className='gc-dialog-count';count.textContent=`${index+1} / ${items.length}`;body.append(count);content.append(body);dialog.append(close,content);attachGalleryDialog(host,dialog);dialog.showModal();engine?.setSuspended?.(true);loadNativeImage(media.querySelector('img'));close.focus();
   dialog.addEventListener('cancel',e=>{e.preventDefault();closeDialog();});dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDialog();}});
  }
  function makeCard(item,index,settings={}){
   if(nativeList)return nativeList.makeCard(item,index,settings,options,open);
   const b=document.createElement('button');b.type='button';b.className='gc-card';b.setAttribute('aria-label',item.title||`Image ${index+1}`);
-  const media=document.createElement('span');media.className='gc-card-media';if(item.src){media.append(createImage(item));b.append(media);}
+  const media=document.createElement('span');media.className='gc-card-media';if(item.src && options.popupImage!==false){media.append(createImage(item));b.append(media);}
   const copy=document.createElement('span');copy.className='gc-card-copy';
   if(settings.caption!==false&&options.showTitles&&item.title){const title=document.createElement('span');title.className='gc-card-title';title.textContent=item.title;copy.append(title);}
   if(settings.description&&item.description){const description=document.createElement('span');description.className='gc-card-description';description.textContent=textHTML(item.description);copy.append(description);}
@@ -118,7 +119,7 @@ export function mountGallery(host,items,initial={},nativeList=null){
  const mq=matchMedia('(prefers-reduced-motion: reduce)');
  const phone=matchMedia('(max-width: 660px)');
  function renderOptions(){
-  const resolved={...options,reducedMotion:options.reducedMotion||mq.matches};
+  const resolved={...resolveDesignColors(host,options),reducedMotion:options.reducedMotion||mq.matches};
   if(phone.matches){
    if(options.mobileCardWidth!=null)resolved.cardWidth=options.mobileCardWidth;
    if(options.mobileGap!=null)resolved[options.preset==='spiral'?'spiralGap':'gap']=options.mobileGap;
@@ -130,10 +131,11 @@ export function mountGallery(host,items,initial={},nativeList=null){
  }
  function styleHost(){
   host.classList.toggle('gc-hide-controls',options.showControls===false);
-  styleAppearance(host,options);
+  const design=resolveDesignColors(host,options);
+  styleAppearance(host,design);
   host.style.setProperty('--gc-fit',options.fit);
   host.style.setProperty('--gc-card-radius',options.radius+'px');
-  applyGalleryTheme(host,options);
+  applyGalleryTheme(host,design);
  }
  function render(initialIndex=0){
   closeDialog();engine?.destroy();engine=null;nativeList?.restore();cancelAnimationFrame(loadFrame);host.replaceChildren();host.classList.add('gc-stage');host.style.height='';

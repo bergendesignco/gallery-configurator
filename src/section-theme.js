@@ -13,7 +13,7 @@ export function applyGalleryTheme(host,options){
  css.setProperty('--gc-background',section?'var(--gc-section-surface)':options.background);
  css.setProperty('--gc-ink',section?'var(--gc-section-body)':options.ink);
  css.setProperty('--gc-accent',section?'var(--gc-section-action)':options.accent);
- css.setProperty('--gc-muted',section?'var(--gc-section-body)':options.ink+'aa');
+ css.setProperty('--gc-muted',section?'var(--gc-section-body)':'color-mix(in srgb,'+options.ink+' 67%, transparent)');
  css.setProperty('--gc-spatial-surface','var(--gc-background)');
  css.setProperty('--gc-spatial-ink','var(--gc-ink)');
  if(section){

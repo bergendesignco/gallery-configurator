@@ -173,3 +173,7 @@ textarea[aria-invalid=true] {border-color:#933821}
   .controls {overflow-y:auto;overscroll-behavior:contain}
   .scroll {flex:none;overflow:visible;scrollbar-gutter:auto}
 }
+
+.palette-chips {display:flex;gap:5px;flex-wrap:wrap}
+.palette-chips .palette-chip {width:auto;min-width:26px;height:26px;padding:0 4px;border:1px solid #aaa;border-radius:50%;color:inherit;cursor:pointer}
+.palette-chip[aria-pressed=true] {outline:2px solid currentColor;outline-offset:1px}

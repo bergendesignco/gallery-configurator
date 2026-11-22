@@ -48,7 +48,7 @@ function readStyle(text, destination) {
       const bounds = field.percent && style.values.spiralRiseUnit === 'percent' ? field.percent : field;
       if (!Number.isFinite(value) || value < bounds.min || value > bounds.max) return null;
     } else if (field.type === 'checkbox' && typeof value !== 'boolean') return null;
-    else if (field.type === 'select' && !field.choices.some(choice => choice.value === value)) return null;
+    else if (['select','palette'].includes(field.type) && !field.choices.some(choice => choice.value === value)) return null;
     if (field.type === 'color' && !/^#[0-9a-f]{6}$/i.test(value)) return null;
     next[field.key] = value;
   }

@@ -24,8 +24,10 @@ const fragmentShader = `
   uniform vec2 dimensions;
   uniform float cornerRadius;
   uniform float borderWidth;
-  uniform vec3 borderColor;
-  uniform vec3 backColor;
+  uniform vec4 borderColor;
+  uniform vec4 imageTint;
+  uniform bool showImage;
+  uniform vec4 backColor;
   uniform bool solidBack;
   uniform vec2 contentDimensions;
   uniform vec2 imageScale;
@@ -47,10 +49,12 @@ const fragmentShader = `
     gl_FragColor = texture2D(screenshot,clamp(sampleUv,vec2(0.0),vec2(1.0)));
     #include <colorspace_fragment>
     gl_FragColor.a *= inContent * inImage;
-    if (solidBack && !gl_FrontFacing) gl_FragColor = vec4(backColor,1.0);
+    gl_FragColor.rgb = mix(gl_FragColor.rgb,imageTint.rgb,imageTint.a);
+    if (!showImage) gl_FragColor = backColor;
+    if (solidBack && !gl_FrontFacing) gl_FragColor = backColor;
     if (borderWidth > 0.0) {
       float rim = smoothstep(-borderWidth-aa,-borderWidth+aa,edge);
-      gl_FragColor = mix(gl_FragColor,vec4(borderColor,1.0),rim);
+      gl_FragColor = mix(gl_FragColor,borderColor,rim);
     }
     if (gl_FragColor.a < .001) discard;
     // Match the old sRGB darkening, without a second coplanar overlay.
@@ -112,7 +116,7 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
     const material=new ShaderMaterial({uniforms:{
       screenshot:{value:textures.get(textureSource(card))},dimensions:{value:new Vector2()},
       contentDimensions:{value:new Vector2(1,1)},imageScale:{value:new Vector2(1,1)},
-      borderColor:{value:[0,0,0]},backColor:{value:[0,0,0]},solidBack:{value:false},borderWidth:{value:0},
+      borderColor:{value:[0,0,0,1]},backColor:{value:[0,0,0,1]},imageTint:{value:[0,0,0,0]},showImage:{value:true},solidBack:{value:false},borderWidth:{value:0},
       cornerRadius:{value:0},fade:{value:1},shade:{value:0},focused:{value:0}},
       vertexShader,fragmentShader,transparent:true,side:DoubleSide,depthTest:true,depthWrite:true,
       forceSinglePass:true,polygonOffset:true,polygonOffsetFactor:0,polygonOffsetUnits:0});
@@ -146,12 +150,13 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
       uniforms.cornerRadius.value=Math.min(Number(root.dataset.cornerRadius)||0,cardWidth/2,card.height/2);
       uniforms.borderWidth.value=Number(root.dataset.borderWidth)||0;
       uniforms.solidBack.value=root.dataset.backFace==='solid';
-      for(const key of ['backColor','borderColor']){
-        const uniform=uniforms[key], hex=root.dataset[key];
+      uniforms.showImage.value=root.dataset.showImage!=='false';
+      for(const key of ['backColor','borderColor','imageTint']){
+        const uniform=uniforms[key], hex=root.dataset[key] || '#00000000';
         if(uniform.hex!==hex){
           uniform.hex=hex;
-          const rgb=parseInt(hex.slice(1),16);
-          uniform.value=[rgb>>16,(rgb>>8)&255,rgb&255].map(channel=>channel/255);
+          const rgba=hex.length===7?hex+'ff':hex;
+          uniform.value=[1,3,5,7].map(i=>parseInt(rgba.slice(i,i+2),16)/255);
         }
       }
       const image=panel.material.uniforms.screenshot.value.image;
@@ -204,6 +209,10 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
       const focused=keyboard&&card===carousel.cards[carousel.active]&&Math.abs(panel.offset)<.5;
       material.polygonOffsetUnits=Math.abs(panel.offset)*8;
       mesh.position.set(pose.x,pose.y,pose.z);mesh.rotation.y=pose.angle;
+      const hover=panel===hovered && !carousel.pointer && !carousel.reducedMotion.matches;
+      const amount=Number(root.dataset.hoverAmount)||0;
+      mesh.scale.setScalar(hover && root.dataset.hoverEffect==='zoom'?1+amount/100:1);
+      if(hover && root.dataset.hoverEffect==='lift')mesh.position.y+=amount;
       mesh.visible=fade>.001 && Boolean(material.uniforms.screenshot.value.image);
       if(mesh.visible)visibleCount++;
       panel.guide.position.copy(mesh.position);panel.guide.rotation.copy(mesh.rotation);

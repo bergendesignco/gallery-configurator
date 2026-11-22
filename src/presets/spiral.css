@@ -35,3 +35,26 @@
 }
 .gc-spiral-root [data-back-face=solid] .orbit-card[data-gc-back-facing] .orbit-surface > img {opacity:0}
 .gc-spiral-root [data-back-face=solid] .orbit-card[data-gc-back-facing] .orbit-surface {background:var(--gc-back-color);border-radius:var(--orbit-card-radius)}
+
+.gc-item-details {display:grid;text-align:center}
+.gc-item-details[hidden],.gc-item-details [hidden]{display:none!important}
+.gc-item-detail {grid-area:1/1;min-width:0;overflow-wrap:anywhere}
+.gc-item-description {margin:.35em 0;color:var(--gc-detail-color);font-size:var(--gc-detail-size)}
+.gc-item-detail a {display:inline-block;color:inherit;text-decoration:underline}
+.gc-item-details,.gc-spiral-caption-space {padding-inline:var(--gc-detail-padding)}
+.gc-item-details:not([hidden]),.gc-spiral-caption-space:not([hidden]) {padding-block:var(--gc-detail-padding)}
+.gc-spiral-root [data-show-image=false] .orbit-surface img {visibility:hidden!important}
+.gc-spiral-root [data-show-image=false] .orbit-surface {background:var(--gc-back-color)}
+.gc-stage .gc-spiral-dialog,.gc-stage .gc-dialog {border-radius:var(--gc-popup-radius,12px)}
+.gc-stage[data-gc-popup-padding] :is(.project-info,.gc-dialog-copy){padding:var(--gc-popup-padding)}
+.gc-stage[data-gc-popup-colors] :is(.project-dialog,.project-info,.project-topbar,.gc-dialog,.gc-dialog-copy){
+  background:var(--gc-popup-color);color:var(--gc-popup-ink)}
+.gc-stage[data-gc-popup-colors] :is(.project-title,.project-summary,.project-frame-label,.gc-dialog-copy h2){color:var(--gc-popup-ink)}
+.gc-spiral-dialog .project-layout:has(>[hidden]){grid-template-columns:1fr}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){
+  .gc-spiral-root .spiral-carousel[data-hover-effect=zoom]:not(.has-webgl-carousel) .orbit-card:hover .orbit-surface{transform:scale(var(--gc-hover-scale))}
+  .gc-spiral-root .spiral-carousel[data-hover-effect=lift]:not(.has-webgl-carousel) .orbit-card:hover .orbit-surface{transform:translateY(var(--gc-hover-rise))}
+}
+
+.gc-spiral-root .orbit-webgl,.gc-spiral-root .spiral-carousel:not(.has-webgl-carousel) .orbit-surface {filter:var(--gc-shadow-filter,none)}
+.gc-spiral-root .spiral-carousel:not(.has-webgl-carousel) .orbit-surface img {filter:var(--gc-image-filter,none)}

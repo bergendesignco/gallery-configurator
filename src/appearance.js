@@ -21,7 +21,15 @@ export function styleAppearance(host,options){
   host.dataset.gcTitlePalette = options.titlePalette;
   host.toggleAttribute('data-gc-title-size', options.titleSize > 0);
   host.toggleAttribute('data-gc-title-weight', options.titleWeight !== 'inherit');
+  host.toggleAttribute('data-gc-popup-colors',!!options.popupCustom);
+  host.toggleAttribute('data-gc-popup-padding',options.popupPadding>0);
   const variables = {
+    '--gc-detail-padding':options.cardPadding+'px',
+    '--gc-detail-size':options.descriptionSize>0?options.descriptionSize+'rem':'inherit',
+    '--gc-detail-color':options.descriptionCustom?options.descriptionColor:'inherit',
+    '--gc-popup-padding':options.popupPadding+'px','--gc-popup-radius':options.popupRadius+'px',
+    '--gc-popup-color':options.popupColor,'--gc-popup-ink':options.popupInk,
+    '--gc-hover-scale':1+options.hoverAmount/100,'--gc-hover-rise':-options.hoverAmount+'px',
     '--gc-edge-direction': ['wall','spiral'].includes(options.preset) ? 'to bottom' : 'to right',
     '--gc-edge-fade': options.edgeFade + '%', '--gc-back-color': options.backColor,
     '--gc-control-size': options.controlSize + 'px', '--gc-control-fill': options.controlFill,

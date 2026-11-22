@@ -1,3 +1,4 @@
+import {createImageEffects} from '../image-effects.js';
 import { ProjectViewer } from '../spiral/ProjectViewer.js';
 import { setTransportIcon } from '../transport-icons.js';
 import { spiralDefaults } from './spiral-settings.js';
@@ -91,6 +92,22 @@ export function mountSpiral(ctx) {
     measure.textContent = title;
     captionSpace.append(measure);
   }
+  const detailSpace=document.createElement('div');
+  detailSpace.className='gc-item-details';
+  captionSpace.after(detailSpace);
+  const details=items.map(item=>{
+    const group=document.createElement('div');
+    group.className='gc-item-detail';
+    const body=document.createElement('p');
+    body.className='gc-item-description';
+    body.textContent=plainText(item.description);
+    const link=document.createElement('a');
+    const href=usableLink(item.link);
+    if(href)link.href=href;
+    link.textContent=item.buttonLabel||'Open link';
+    group.append(body,link);detailSpace.append(group);
+    return {group,body,link,href};
+  });
   items.forEach((item, index) => {
     const card = document.createElement('button');
     card.className = 'orbit-card';
@@ -106,7 +123,18 @@ export function mountSpiral(ctx) {
   });
   shell.append(root); host.append(shell);
 
+  const updateEffects=createImageEffects(shell,root.id);
   const setAttributes = () => {
+    updateEffects(options);
+    root.dataset.showImage=String(options.showImage!==false);
+    root.dataset.imageTint=options.imageTint;
+    root.dataset.hoverEffect=options.reducedMotion?'none':options.hoverEffect;
+    root.dataset.hoverAmount=options.hoverAmount;
+    for (const {body,link,href} of details){
+      body.hidden=!options.showDescription||!body.textContent;
+      link.hidden=!options.showButton||!href;
+    }
+    detailSpace.hidden=details.every(({body,link})=>body.hidden&&link.hidden);
     root.dataset.edgeMode = options.edgeMode;
     root.dataset.backFace = options.backFace;
     root.dataset.cornerRadius = options.spiralRadius;
@@ -161,11 +189,14 @@ export function mountSpiral(ctx) {
       if(item.postUrl){ctx.openPost(item,index);return;}
       super.open(index);
       const title = this.dialog.querySelector('.project-title');
-      title.hidden = !item.title;
-      if (item.title) this.dialog.setAttribute('aria-labelledby', title.id);
+      title.hidden = !item.title || !options.popupTitle;
+      if (!title.hidden) this.dialog.setAttribute('aria-labelledby', title.id);
       else this.dialog.removeAttribute('aria-labelledby');
-      this.dialog.querySelector('.project-summary').hidden = !plainText(item.description);
-      this.sourceLink.hidden = !link;
+      this.dialog.querySelector('.project-summary').hidden = !options.popupDescription || !plainText(item.description);
+      this.dialog.querySelector('.project-gallery').hidden=!options.popupImage;
+      this.dialog.querySelector('.project-frame-label').hidden=!options.popupTitle;
+      this.dialog.querySelector('.project-info').hidden=title.hidden && this.dialog.querySelector('.project-summary').hidden && !(link && options.popupButton);
+      this.sourceLink.hidden = !link || !options.popupButton;
       if (link) {
         this.sourceLink.href = link;
         this.sourceLink.textContent = item.buttonLabel || 'Open link';
@@ -198,6 +229,10 @@ export function mountSpiral(ctx) {
   const originalActive = carousel.updateActive;
   carousel.updateActive = function (index) {
     originalActive.call(this, index);
+    details.forEach(({group},i)=>{
+      group.inert=i!==index;
+      group.style.visibility=i===index?'visible':'hidden';
+    });
     this.status.textContent = `${items[index]?.title ? `${items[index].title}, ` : ''}image ${index + 1} of ${items.length}`;
     onChange(index);
   };
