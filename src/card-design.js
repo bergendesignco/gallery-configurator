@@ -1,7 +1,8 @@
+import {additionalPaints} from './presets/spiral-design.js';
 // Register a layout here when its renderer supports the shared content and design roles.
 export const cardDesignLayouts = new Set(['spiral']);
 export const themeSwatches = { white:'Lightest', lightAccent:'Light', accent:'Accent', darkAccent:'Dark', black:'Darkest' };
-export const designColors = ['titleColor','descriptionColor','popupColor','popupInk','shadowColor','imageTint','controlFill','controlInk','backColor','spiralRim','background','ink','accent'];
+export const designColors = [...additionalPaints,'titleColor','descriptionColor','popupColor','popupInk','shadowColor','imageTint','controlFill','controlInk','backColor','spiralRim','background','ink','accent'];
 export const cardDesignDefaults = {
   showImage:true, showDescription:false, showButton:false, cardPadding:0,
   popupImage:true, popupTitle:true, popupDescription:true, popupButton:true,
@@ -12,7 +13,7 @@ export const cardDesignDefaults = {
 };
 for (const key of designColors) {
   cardDesignDefaults[key+'Swatch']='custom';
-  cardDesignDefaults[key+'Opacity']=key==='imageTint'?0:key==='shadowColor'?25:100;
+  cardDesignDefaults[key+'Opacity']=key==='imageTint'?0:['shadowColor','cardShadowColor','mirrorColor'].includes(key)?25:100;
 }
 
 export function cardDesignGroups({range,swatch,select}) {

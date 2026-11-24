@@ -1,3 +1,4 @@
+import {composeCards,needsCardArt} from '../spiral/card-art.js';
 import {createImageEffects} from '../image-effects.js';
 import { ProjectViewer } from '../spiral/ProjectViewer.js';
 import { setTransportIcon } from '../transport-icons.js';
@@ -51,13 +52,13 @@ function usableLink(value) {
 
 export function mountSpiral(ctx) {
   const { host, onChange = () => {}, loadImage } = ctx;
-  const items = ctx.items.filter(item => item.src);
+  const items = ctx.items.filter(item => item.src || item.title || item.description || item.link);
   let options = { ...spiralDefaults, ...ctx.options };
   let destroyed = false;
   if (!items.length) {
     const empty = document.createElement('p');
     empty.className = 'gc-spiral-empty';
-    empty.textContent = 'Add images to this source to preview the spiral.';
+    empty.textContent = 'Add content to this source to preview the spiral.';
     host.append(empty);
     return { destroy() { empty.remove(); } };
   }
@@ -108,61 +109,143 @@ export function mountSpiral(ctx) {
     group.append(body,link);detailSpace.append(group);
     return {group,body,link,href};
   });
+  const transparent='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"></svg>');
+  const cards=[];
   items.forEach((item, index) => {
     const card = document.createElement('button');
     card.className = 'orbit-card';
     card.type = 'button';
     card.dataset.title = item.title || '';
-    card.dataset.imageSource = item.src;
+    card.dataset.imageSource = item.src || transparent;
     card.setAttribute('aria-label', item.title ? `View ${item.title}` : `View image ${index + 1}`);
     const surface = document.createElement('span');
     surface.className = 'orbit-surface';
     const image = document.createElement('img');
-    applySourceImage(image, item);
+    if(item.src)applySourceImage(image,item);else image.src=transparent;
+    cards.push(card);card.dataset.buttonLink=usableLink(item.link)||'';
     surface.append(image); card.append(surface); ring.append(card);
   });
   shell.append(root); host.append(shell);
 
+  const assets=new Map();
+  let artworkVersion=0,artKey='';
+  async function updateArt(){
+    const key=JSON.stringify(options);
+    if(artKey===key)return;
+    artKey=key;
+    const version=++artworkVersion;
+    const composite=items.some(item=>needsCardArt(item,options));
+    root.dataset.composite=String(composite);
+    if(!composite){
+      for(const [index,card] of cards.entries()){
+        card.artwork=null;card.buttonBounds=null;
+        if(card.hasAttribute('data-artwork')){for(const copy of ring.querySelectorAll('[data-slide-index="'+index+'"] img'))copy.src=items[index].src||transparent;card.removeAttribute('data-artwork');}
+      }
+      return;
+    }
+    const load=src=>{
+      if(!src||!options.showImage)return null;
+      if(!assets.has(src))assets.set(src,new Promise(resolve=>{
+        const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=src;
+      }));
+      return assets.get(src);
+    };
+    await new Promise(requestAnimationFrame);
+    if(destroyed||version!==artworkVersion)return;
+    const entries=await Promise.all(items.map(async item=>({item:{...item,plain:plainText(item.description)},image:await load(item.src)})));
+    if(destroyed||version!==artworkVersion)return;
+    const native=options.typeSource==='native'?host.closest('.user-items-list-section'):null;
+    const type=getComputedStyle(native?.querySelector('.list-item-content__title')||caption);
+    const body=getComputedStyle(native?.querySelector('.list-item-content__description p')||details[0].body);
+    const ink=getComputedStyle(host).color;
+    const art=composeCards(entries,options,{family:type.fontFamily,bodyFamily:body.fontFamily,ink,titleSize:parseFloat(type.fontSize)||16,titleWeight:type.fontWeight,
+      size:parseFloat(body.fontSize)||16,weight:body.fontWeight,accent:getComputedStyle(toggle).color,buttonInk:getComputedStyle(toggle).backgroundColor==='rgba(0, 0, 0, 0)'?'white':getComputedStyle(toggle).backgroundColor});
+    art.forEach(({canvas,buttonBounds},i)=>{
+      cards[i].artwork=canvas;cards[i].buttonBounds=buttonBounds;
+      cards[i].setAttribute('data-artwork','');
+      if(root.dataset.renderer!=='webgl'){
+        const uri=canvas.toDataURL();
+        for(const copy of root.querySelectorAll('.orbit-card[data-slide-index="'+i+'"] img'))copy.src=uri;
+      }
+    });
+    ring.querySelectorAll('[data-repeat]').forEach(copy=>{const source=cards[Number(copy.dataset.slideIndex)];copy.buttonBounds=source?.buttonBounds;});
+    root.dataset.cardAspect=String(art[0].aspect);
+    root.style.setProperty('--gc-art-aspect',art[0].aspect);
+    root.dispatchEvent(new Event('artwork-change'));
+  }
   const updateEffects=createImageEffects(shell,root.id);
   const setAttributes = () => {
-    updateEffects(options);
+    const hasCardText=options.textPlacement==='card';
+    const composited=items.some(item=>needsCardArt(item,options));
+    updateEffects({...options,shadowEnabled:options.shadowEnabled&&!composited,imageTint:options.overlayEnabled&&!composited?options.imageTint:'#00000000'});
+    if(!options.titleCustom){host.removeAttribute('data-gc-title-size');host.removeAttribute('data-gc-title-weight');host.dataset.gcTitlePalette='theme';}
+    else {host.dataset.gcTitlePalette=options.titlePalette;}
+    captionSpace.style.textAlign=options.titleAlign;
+    shell.style.setProperty('--gc-card-inset',options.carouselPadding+'px');
+    root.style.padding=options.carouselPadding+'px';
+    root.style.overflow=options.surfaceRadius?'hidden':'';
+    root.style.borderRadius=options.surfaceRadius+'px';
+    root.style.backgroundColor=options.surfaceEnabled?options.surfaceColor:'';
+    root.style.setProperty('--gc-hover-time',options.hoverDuration+'ms');
+    root.dataset.hoverDuration=options.hoverDuration;
+    root.dataset.mirrorColor=options.mirrorOverlay?options.mirrorColor:'#00000000';
+    root.dataset.playbackMode=options.playbackMode;
+    root.dataset.rate=options.cardsPerMinute;
+    root.dataset.interval=options.duration;
+    root.dataset.direction=options.direction;
+    root.dataset.pauseOnHover=String(options.pauseOnHover);
+    root.dataset.customControlSize=String(Boolean(options.controlPadding||options.controlIconSize));
+    root.dataset.hideControlBackground=String(!options.controlBackground);
+    root.style.setProperty('--gc-icon-size',options.controlIconSize?options.controlIconSize+'px':'calc(var(--gc-control-size) * .455)');
+    root.style.setProperty('--gc-button-padding',options.controlPadding+'px');
+    host.style.setProperty('--gc-detail-padding','0px');
+    for(const title of captionSpace.children){title.style.textAlign=options.titleCustom?options.titleAlign:'';title.style.marginBottom=options.titleGap?options.titleGap+'px':'';}
+    for(const {body,link} of details){
+      body.style.textAlign=options.bodyCustom?options.descriptionAlign:'';
+      body.style.fontWeight=options.bodyCustom?options.descriptionWeight:'';
+      body.style.color=options.bodyCustom&&options.descriptionCustom?options.descriptionColor:'inherit';
+      body.style.fontSize=options.bodyCustom&&options.descriptionSize?options.descriptionSize+'rem':'';
+      link.style.marginTop=options.buttonGap+'px';
+    }
     root.dataset.showImage=String(options.showImage!==false);
-    root.dataset.imageTint=options.imageTint;
+    root.dataset.imageTint=options.overlayEnabled?options.imageTint:'#00000000';
     root.dataset.hoverEffect=options.reducedMotion?'none':options.hoverEffect;
     root.dataset.hoverAmount=options.hoverAmount;
-    for (const {body,link,href} of details){
+    for (const [index,{body,link,href}] of details.entries()){
       body.hidden=!options.showDescription||!body.textContent;
-      link.hidden=!options.showButton||!href;
+      link.hidden=!options.showButton||!href||!items[index].buttonLabel;
     }
-    detailSpace.hidden=details.every(({body,link})=>body.hidden&&link.hidden);
+    detailSpace.hidden=hasCardText||details.every(({body,link})=>body.hidden&&link.hidden);
     root.dataset.edgeMode = options.edgeMode;
     root.dataset.backFace = options.backFace;
     root.dataset.cornerRadius = options.spiralRadius;
-    root.dataset.borderWidth = options.borderWidth;
+    root.dataset.borderWidth = options.cardBorderEnabled?options.borderWidth:0;
     root.dataset.borderColor = options.spiralRim;
     root.dataset.backColor = options.backColor;
     root.style.setProperty('--orbit-card-radius', options.spiralRadius + 'px');
     root.style.setProperty('--orbit-rim', options.spiralRim);
     shell.style.width = `${bounded(options.containerWidth, 100, 20, 100)}%`;
-    stage.style.height = `${bounded(options.stageHeight, 680, 280, 1600)}px`;
+    stage.style.height=options.heightMode==='viewport'?bounded(options.viewportHeight,65,15,100)+'vh':
+      options.heightMode==='auto'?'clamp(160px,calc('+options.cardWidth+'px + '+(options.spiralRise*4)+'px),90svh)':bounded(options.stageHeight,680,120,1600)+'px';
     root.style.setProperty('--orbit-card-width', `${bounded(options.cardWidth, 280, 80, 720)}px`);
     root.dataset.spiralWidth = String(bounded(options.spiralWidth, 87, 20, 100));
     root.dataset.cardWidth = String(bounded(options.cardWidth, 280, 80, 720));
     root.dataset.rise = String(bounded(options.spiralRise, 52, options.spiralRiseUnit === 'percent' ? 1 : 8, options.spiralRiseUnit === 'percent' ? 50 : 500));
     root.dataset.riseUnit = options.spiralRiseUnit === 'percent' ? 'percent' : 'px';
-    root.dataset.cardAspect = String(aspect(options.aspectRatio));
+    if(!cards[0].artwork||!items.some(item=>needsCardArt(item,options)))root.dataset.cardAspect=String(aspect(options.aspectRatio));
     root.dataset.imageFit = options.fit === 'contain' || options.fit === 'fit' ? 'fit' : 'fill';
     root.dataset.imagePadding = String(bounded(options.imagePadding, 0, 0, 20));
     root.dataset.slotGap = String(bounded(options.spiralGap, 3, 0, 16));
     root.dataset.showSlots = String(Boolean(options.showSlots));
-    captionSpace.hidden = !options.showTitles || !hasTitles;
+    captionSpace.hidden = hasCardText || !options.showTitles || !hasTitles;
+    updateArt();
     root.classList.toggle('gc-spiral-reduced', Boolean(options.reducedMotion));
   };
   setAttributes();
 
   const projects = items.map(item => ({
     title: item.title || '', category: '', description: plainText(item.description),
-    services: [], notes: [], gallery: [{ file: item.src, label: 'Image' }],
+    services: [], notes: [], gallery: [{ file: item.src||transparent, label: 'Image' }],
   }));
 
   class SourceProjectViewer extends ProjectViewer {
@@ -180,9 +263,9 @@ export function mountSpiral(ctx) {
     }
     open(index) {
       const item = items[index];
-      if (!item || options.clickAction === 'none') return;
+      if (!item || (options.clickAction === 'none'||(options.clickAction==='source'&&host.dataset.sourceType!=='gallery'))) return;
       const link = usableLink(item.link);
-      if (options.clickAction === 'link') {
+      if (options.clickAction === 'link'||options.clickAction==='source') {
         if (link) location.assign(link);
         return;
       }
@@ -193,7 +276,7 @@ export function mountSpiral(ctx) {
       if (!title.hidden) this.dialog.setAttribute('aria-labelledby', title.id);
       else this.dialog.removeAttribute('aria-labelledby');
       this.dialog.querySelector('.project-summary').hidden = !options.popupDescription || !plainText(item.description);
-      this.dialog.querySelector('.project-gallery').hidden=!options.popupImage;
+      this.dialog.querySelector('.project-gallery').hidden=!options.popupImage||!item.src;
       this.dialog.querySelector('.project-frame-label').hidden=!options.popupTitle;
       this.dialog.querySelector('.project-info').hidden=title.hidden && this.dialog.querySelector('.project-summary').hidden && !(link && options.popupButton);
       this.sourceLink.hidden = !link || !options.popupButton;
@@ -207,7 +290,7 @@ export function mountSpiral(ctx) {
       super.showFrame(index);
       const sourceIndex = projects.indexOf(this.project);
       const item = items[sourceIndex];
-      if (!item) return;
+      if (!item?.src) return;
       applySourceImage(this.image, item, loadImage);
       this.dialog.querySelectorAll('.project-thumbnail img').forEach(image => applySourceImage(image, item, loadImage));
       this.dialog.querySelector('.project-frame-label').textContent = item.title || '';
@@ -226,6 +309,14 @@ export function mountSpiral(ctx) {
   // textures below use the unsized source URL directly, independently of it.
   root.querySelectorAll('img').forEach(image => loadImage?.(image));
 
+  const renderFallback=()=>{
+    for(const [index,card] of cards.entries()){
+      if(!card.artwork)continue;
+      const src=card.artwork.toDataURL();
+      for(const img of ring.querySelectorAll('[data-slide-index="'+index+'"] img'))img.src=src;
+    }
+  };
+  stage.addEventListener('webglcontextlost',renderFallback,true);
   const originalActive = carousel.updateActive;
   carousel.updateActive = function (index) {
     originalActive.call(this, index);
@@ -273,7 +364,7 @@ export function mountSpiral(ctx) {
     destroy() {
       if (destroyed) return;
       destroyed = true;
-      stopPlayback(); stopRenderer(); carousel.destroy(); shell.remove();
+      stage.removeEventListener('webglcontextlost',renderFallback,true);stopPlayback(); stopRenderer(); carousel.destroy(); shell.remove();
     },
   };
 }

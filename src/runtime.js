@@ -42,7 +42,7 @@ export function usesMinimumHeight(preset) {
 function mergeOptions(current,next) {
  const minimum=usesMinimumHeight(next.preset ?? current.preset);
  const inheritedHeight=minimum===usesMinimumHeight(current.preset) ? current.stageHeight : minimum ? 0 : 590;
- return {...current,...next,stageHeight:next.stageHeight ?? inheritedHeight};
+ return {...(next.preset==='spiral'?spiralDefaults:{}),...current,...next,stageHeight:next.stageHeight ?? inheritedHeight};
 }
 function styleFamily(preset) {
  if (!preset || preset === 'stack') return 'common';
@@ -120,7 +120,16 @@ export function mountGallery(host,items,initial={},nativeList=null){
  const phone=matchMedia('(max-width: 660px)');
  function renderOptions(){
   const resolved={...resolveDesignColors(host,options),reducedMotion:options.reducedMotion||mq.matches};
-  if(phone.matches){
+  if(phone.matches&&(options.preset!=='spiral'||options.mobileSizing)){
+   if(options.preset==='spiral'){
+     for(const [base,override] of [['spiralWidth','mobileSpiralWidth'],['carouselPadding','mobileCarouselPadding'],['cardPadding','mobileCardPadding']])
+       if(options[override]!=null)resolved[base]=options[override];
+     if(options.mobileHeightMode && options.mobileHeightMode!=='inherit'){
+       resolved.heightMode=options.mobileHeightMode;
+       resolved.stageHeight=options.mobileStageHeight??resolved.stageHeight;
+       resolved.viewportHeight=options.mobileViewportHeight;
+     }
+   }
    if(options.mobileCardWidth!=null)resolved.cardWidth=options.mobileCardWidth;
    if(options.mobileGap!=null)resolved[options.preset==='spiral'?'spiralGap':'gap']=options.mobileGap;
   }
@@ -167,7 +176,7 @@ export function mountGallery(host,items,initial={},nativeList=null){
  }
  const motion=()=>render(active);
  function resizePhone(){
-  if(options.mobileCardWidth==null && options.mobileGap==null)return;
+  if(options.preset!=='spiral'&&options.mobileCardWidth==null && options.mobileGap==null)return;
   if(engine?.setGeometry)engine.setGeometry(renderOptions());
   else if(options.preset==='spiral')engine?.update(renderOptions());
   else render(active);
@@ -262,7 +271,7 @@ export function embed({selector,type='gallery',options={}}={}){
  if(previous){previous.instance.update(options);return previous;}
  if(!readSource(source,type).length)return null;
  const host=document.createElement('div'),slot=document.createElement('div');
- host.className='gc-embed';slot.className='gc-viewport-slot';slot.append(host);
+ host.dataset.sourceType=type;host.className='gc-embed';slot.className='gc-viewport-slot';slot.append(host);
  let current={...mergeOptions(defaults,options),previewScroll:false};
  let gallery=null,restoreScroll=null,restoreViewport=null,restoreBlock=null,stopEdit=null,destroyed=false,hidden=[];
  let listWidth=null, editPreview=false, clonedTrack=null;

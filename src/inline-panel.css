@@ -177,3 +177,12 @@ textarea[aria-invalid=true] {border-color:#933821}
 .palette-chips {display:flex;gap:5px;flex-wrap:wrap}
 .palette-chips .palette-chip {width:auto;min-width:26px;height:26px;padding:0 4px;border:1px solid #aaa;border-radius:50%;color:inherit;cursor:pointer}
 .palette-chip[aria-pressed=true] {outline:2px solid currentColor;outline-offset:1px}
+.paint-row,.type-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:36px}
+.type-heading{padding:10px 12px;font-weight:600}
+.type-heading .field{width:auto;display:flex;gap:8px;margin:0}
+.paint-trigger{width:32px;height:32px;border:1px solid var(--gc-panel-border);background:#efefea;padding:5px;border-radius:6px}
+.paint-trigger::after{content:"";display:block;height:100%;background:var(--chip);opacity:var(--alpha);border-radius:50%}
+.paint-popup{position:fixed;inset:auto;margin:0;width:min(260px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto;border:1px solid var(--gc-panel-border);border-radius:12px;padding:12px;background:#fafaf7;color:#20231e;box-shadow:0 5px 20px #17261d25}
+.paint-popup .field-palette>.field-label{display:none}
+.paint-popup .field-palette{display:block}
+.group-body .field[data-subsetting],.group-body .paint-row{margin-inline-start:10px}

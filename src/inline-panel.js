@@ -1,3 +1,4 @@
+import {spiralDesignGroups} from './presets/spiral-design.js';
 import {cardDesignGroups,cardDesignLayouts,designColors,themeSwatches} from './card-design.js';
 import { defaults, presets, spiralControls, spiralDefaults, usesMinimumHeight } from './runtime.js';
 import panelCSS from './inline-panel.css';
@@ -82,7 +83,7 @@ export function controlGroups(options, sourceType) {
   interaction.push({ key: 'reducedMotion', label: 'Reduce motion', type: 'checkbox' });
 
   const enhanced=cardDesignLayouts.has(preset);
-  const sections=[
+  let sections=[
     { title: 'Size & spacing', fields: geometry },
     { title: 'Mobile overrides', fields: [
       { ...geometry.find(field => field.key === 'cardWidth'), key: 'mobileCardWidth', label: 'Mobile card width', inherits: 'cardWidth' },
@@ -147,13 +148,24 @@ export function controlGroups(options, sourceType) {
     ]},
     ...(enhanced?cardDesignGroups({range,select,swatch}):[]),
   ];
+  if(preset==='spiral'){
+    sections=spiralDesignGroups(options,sourceType,{range,select,swatch},sections);
+    for(const group of sections){
+      if(group.title==='Mobile')for(const f of group.fields.slice(1)){
+        f.condition=o=>o.mobileSizing;
+        f.mobileRange=!!f.inherits;
+      }
+      if(group.switchKey)group.fields.unshift({key:group.switchKey,label:'Custom',type:'checkbox'});
+      if(group.switchKey)group.fields.slice(1).forEach(f=>f.when=[group.switchKey,true]);
+    }
+  }
   if(enhanced) for(const section of sections){
     section.fields=section.fields.flatMap(field=>{
       if(field.type!=='color'||!designColors.includes(field.key))return [field];
       const when=field.when||(!field.independent?['colorSource','custom']:undefined);
       return [
-        {...select(field.key+'Swatch',field.label+' palette',{custom:'Custom',...themeSwatches}),type:'palette',when},
-        {...field,when,customFor:field.key+'Swatch'},
+        {...select(field.key+'Swatch',field.label+' palette',{custom:'Custom',...themeSwatches}),type:'palette',when,condition:field.condition},
+        {...field,when,condition:field.condition,customFor:field.key+'Swatch'},
         {...range(field.key+'Opacity',field.label+' opacity',0,100,1,'%'),when},
       ];
     });
@@ -229,6 +241,11 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   let destroyed = false;
   let copyAttempt = 0;
   const fields = new Map();
+  const popupCleanups=[];
+  const visibility=new Map();
+  function syncGroups(){
+    for(const [section,key] of visibility)section.hidden=!current[key];
+  }
   const groups = new Map();
   const element = node('div');
   element.setAttribute('data-gc-author-panel', '');
@@ -349,7 +366,9 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     const { definition, input, output, row } = field;
     const value = current[definition.key];
     if(definition.when) row.hidden = current[definition.when[0]] !== definition.when[1];
+    if(definition.condition)row.hidden=(definition.when && current[definition.when[0]]!==definition.when[1])||!definition.condition(current);
     if(definition.type==='palette'){
+      field.refresh?.();
       for(const chip of input.children)chip.setAttribute('aria-pressed',String(chip.value===value));
       return;
     }
@@ -405,6 +424,9 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     } else {
       onOption(key, value);
     }
+    const paintKey=key.replace(/Swatch$|Opacity$/,'');
+    const role=paintKey==='titleColor'?'titlePalette':paintKey==='descriptionColor'?'descriptionCustom':null;
+    if(current.preset==='spiral'&&role){const custom=role==='titlePalette'?'custom':true;current[role]=custom;onOption(role,custom);}
     if (key === 'galleryHeight') {
       buildGroups();
       fields.get(key).input.focus({preventScroll:true});
@@ -412,12 +434,14 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     if (key === 'colorSource') fields.forEach(syncField);
     else syncField(fields.get(key));
     for (const field of fields.values()) if (field.definition.inherits === key || field.definition.when?.[0] === key || field.definition.customFor===key) syncField(field);
+    if(current.preset==='spiral'){fields.forEach(syncField);syncGroups();}
     refreshCode();
   }
 
   function makeField(definition) {
     const { key, label, type } = definition;
     const row = node(definition.inherits || type==='palette' ? 'div' : 'label', `field field-${type}`);
+    if(current.preset==='spiral'&&definition.when)row.setAttribute('data-subsetting','');
     const name = node('span', 'field-label', label);
     if(type==='palette'){
       const input=node('div','palette-chips');
@@ -455,7 +479,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     if (output) row.append(output);
     row.append(type === 'select' ? selectBox(input) : input);
     const field = { definition, input, output, row };
-    if (definition.inherits) {
+    if (definition.inherits && !definition.mobileRange) {
       const enable = node('input');
       enable.type = 'checkbox';
       enable.setAttribute('aria-label', 'Customize ' + label.toLowerCase());
@@ -476,19 +500,64 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
 
   function buildGroups() {
     const openGroups = new Map([...groups].map(([name, details]) => [name, details.open]));
-    fields.clear();
+    popupCleanups.splice(0).forEach(clean=>clean());
+    visibility.clear();fields.clear();
     groups.clear();
     groupArea.replaceChildren();
     for (const group of controlGroups(current, currentSource.type)) {
       const details = node('details', 'group');
-      details.open = openGroups.get(group.title) ?? group.title === 'Size & spacing';
+      details.open = openGroups.get(group.title) ?? ['Elements','Size & spacing'].includes(group.title);
       const summary = node('summary', '', group.title);
       const body = node('div', 'group-body');
-      for (const definition of group.fields) body.append(makeField(definition));
+      const visibleKey=current.preset==='spiral'?{Image:'showImage',Title:'showTitles',Description:'showDescription','Control styling':'showControls'}[group.title]:null;
+      if(visibleKey&&!group.switchKey)visibility.set(details,visibleKey);
+      if(group.switchKey){
+        const section=node('section','group');
+        const heading=node('div','type-heading',group.title);
+        heading.append(makeField(group.fields[0]));
+        if(visibleKey)visibility.set(section,visibleKey);
+        section.append(heading,body);groupArea.append(section);
+      }
+      let picker;
+      for (const definition of group.fields){
+        if(definition.key===group.switchKey)continue;
+        const field=makeField(definition);
+        if(current.preset==='spiral' && definition.type==='palette'){
+          const key=definition.key.slice(0,-6);
+          const row=node('div','paint-row'),trigger=button('paint-trigger','',definition.label.replace(/ palette$/,''));
+          const label=node('span','field-label',definition.label.replace(/ palette$/,''));
+          picker=node('div','paint-popup');picker.popover='auto';trigger.popoverTargetElement=picker;
+          row.append(label,trigger,picker);body.append(row);picker.append(field);
+          const update=()=>{
+            row.hidden=field.hidden;
+            const token=current[definition.key];
+            const hsl=getComputedStyle(currentSource.root).getPropertyValue('--'+token+'-hsl');
+            trigger.style.setProperty('--chip',hsl?'hsl('+hsl+')':current[key]);
+            trigger.style.setProperty('--alpha',current[key+'Opacity']/100);
+            if(!popup.matches(':popover-open'))return;
+            const rect=trigger.getBoundingClientRect(),w=popup.offsetWidth,h=popup.offsetHeight;
+            popup.style.left=Math.max(8,Math.min(innerWidth-w-8,rect.right-w))+'px';
+            popup.style.top=Math.max(8,Math.min(innerHeight-h-8,rect.bottom+h+8<=innerHeight?rect.bottom+4:rect.top-h-4))+'px';
+          };
+          const popup=picker;
+          const observer=new ResizeObserver(update);
+          const clean=()=>{observer.disconnect();window.removeEventListener('scroll',update,true);window.removeEventListener('resize',update);};
+          popupCleanups.push(clean);
+          picker.addEventListener('toggle',()=>{
+            if(popup.matches(':popover-open')){observer.observe(popup);window.addEventListener('scroll',update,true);window.addEventListener('resize',update);update();}
+            else clean();
+          });
+          fields.get(definition.key).refresh=update;update();
+        }else if(picker && (definition.customFor || definition.key.endsWith('Opacity'))){
+          picker.append(field);if(!definition.customFor)picker=null;
+        }else {picker=null;body.append(field);}
+      }
+      if(group.switchKey)continue;
       details.append(summary, body);
       groupArea.append(details);
       groups.set(group.title, details);
     }
+    syncGroups();
   }
 
   function update(next) {
@@ -500,7 +569,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     target.title = currentSource.selector || target.textContent;
     presetSelect.value = current.preset;
     if (!fields.size || previousPreset !== current.preset) buildGroups();
-    else fields.forEach(syncField);
+    else {fields.forEach(syncField);syncGroups();}
     refreshCode();
   }
 
@@ -521,6 +590,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     copyAttempt += 1;
     const returnFocus = document.activeElement === element;
     document.removeEventListener('keydown', escapePanel);
+    popupCleanups.splice(0).forEach(clean=>clean());
     stopFollowingViewport();
     element.remove();
     if (returnFocus && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
@@ -534,6 +604,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
 
   function escapePanel(event) {
     if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing) return;
+    if(shadow.querySelector('.paint-popup:popover-open'))return;
     if (!removal.hidden) {
       event.preventDefault();
       setRemoval(false);

@@ -13,7 +13,7 @@ export function attachCarouselPlayback(root, carousel, {pauseOnHover=true,intera
     manuallyPaused:false, hovered:false, keyboardFocused:false, inView:false,
     autoFrame:0, autoTime:0, resumeAt:0,
   });
-  let timer = 0;
+  let timer = 0, elapsed=0;
   let destroyed = false;
   const isFocusPause = target => !!target && root.contains(target) &&
     (target.matches(':focus-visible') || !!target.closest('.orbit-card'));
@@ -32,13 +32,21 @@ export function attachCarouselPlayback(root, carousel, {pauseOnHover=true,intera
     if(!canPlay()){stop();return;}
     const dt=Math.min(.05,Math.max(0,(time-carousel.autoTime)/1000));
     carousel.autoTime=time;
-    carousel.position=(carousel.position+dt/8)%carousel.count;
+    const direction=root.dataset.direction==='reverse'?-1:1;
+    if(root.dataset.playbackMode==='step'){
+      elapsed+=dt;
+      if(elapsed>=Number(root.dataset.interval||5)){
+        elapsed=0;carousel.autoTime=0;
+        original.animateTo.call(carousel,Math.round(carousel.position)+direction);
+        timer=setTimeout(sync,100);return;
+      }
+    }else carousel.position=(carousel.position+direction*dt*Number(root.dataset.rate||7.5)/60+carousel.count)%carousel.count;
     carousel.target=carousel.position;carousel.velocity=0;
     carousel.render();
     carousel.autoFrame=requestAnimationFrame(tick);
   };
   const sync = () => {
-    if(!canPlay()){stop();return;}
+    if(!canPlay()){stop();if(carousel.frame&&!destroyed)timer=setTimeout(sync,100);return;}
     const remaining=carousel.resumeAt-performance.now();
     if(remaining>0){stop();timer=setTimeout(sync,remaining);return;}
     if(carousel.autoFrame)return;
@@ -51,8 +59,8 @@ export function attachCarouselPlayback(root, carousel, {pauseOnHover=true,intera
   carousel.animateTo=function(...args){defer(interactionRestMs);original.animateTo.apply(this,args);sync();};
   carousel.settleImmediately=function(...args){original.settleImmediately.apply(this,args);sync();};
   carousel.openProject=function(...args){defer();original.openProject.apply(this,args);sync();};
-  if(pauseOnHover){
-    on(root,'pointerenter',event=>{if(event.pointerType!=='touch'){carousel.hovered=true;sync();}});
+  {
+    on(root,'pointerenter',event=>{if(event.pointerType!=='touch'&&(root.dataset.pauseOnHover==='true'||pauseOnHover)){carousel.hovered=true;sync();}});
     on(root,'pointerleave',event=>{if(event.pointerType!=='touch'){carousel.hovered=false;sync();}});
   }
   on(root,'focusin',event=>{carousel.keyboardFocused=isFocusPause(event.target);sync();});

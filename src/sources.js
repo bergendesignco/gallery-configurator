@@ -61,7 +61,7 @@ export function readSource(root,type,base=location.href){
   const description=cleanHTML(row.querySelector(type==='list'?'.list-item-content__description':'.image-slide-description')?.innerHTML||'');
   const link=row.querySelector(type==='list'?'.list-item-content__button':'.image-slide-anchor');
   return {...imageData(img),title,description,link:safeLink(link?.getAttribute('href'),base),buttonLabel:type==='list'?(link?.textContent.trim()||''):''};
- }).filter(item=>type==='summary'?Boolean(item.link):type==='list'||item.src);
+ }).filter(item=>type==='summary'?Boolean(item.link):type==='list'||Boolean(item.src||item.title||item.link));
 }
 function sourceSelector(root,type){
  const value=type==='list'?root.getAttribute('data-section-id'):root.id;

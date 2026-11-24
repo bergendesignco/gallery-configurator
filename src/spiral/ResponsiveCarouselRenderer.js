@@ -1,5 +1,5 @@
 import {
-  BufferGeometry, Float32BufferAttribute, LineBasicMaterial, LineLoop, DoubleSide, Mesh, NoToneMapping, PerspectiveCamera, Raycaster, Scene,
+  CanvasTexture, BufferGeometry, Float32BufferAttribute, LineBasicMaterial, LineLoop, DoubleSide, Mesh, NoToneMapping, PerspectiveCamera, Raycaster, Scene,
   ShaderMaterial, SRGBColorSpace, TextureLoader, Vector2, WebGLRenderer,
 } from 'three';
 import gsap from 'gsap';
@@ -26,6 +26,7 @@ const fragmentShader = `
   uniform float borderWidth;
   uniform vec4 borderColor;
   uniform vec4 imageTint;
+  uniform vec4 mirrorColor;
   uniform bool showImage;
   uniform vec4 backColor;
   uniform bool solidBack;
@@ -51,6 +52,7 @@ const fragmentShader = `
     gl_FragColor.a *= inContent * inImage;
     gl_FragColor.rgb = mix(gl_FragColor.rgb,imageTint.rgb,imageTint.a);
     if (!showImage) gl_FragColor = backColor;
+    if(!gl_FrontFacing) gl_FragColor.rgb=mix(gl_FragColor.rgb,mirrorColor.rgb,mirrorColor.a);
     if (solidBack && !gl_FrontFacing) gl_FragColor = backColor;
     if (borderWidth > 0.0) {
       float rim = smoothstep(-borderWidth-aa,-borderWidth+aa,edge);
@@ -96,6 +98,15 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
   const originalRender = carousel.render;
   const originalPointerDown = carousel.pointerDown;
   const textures = new Map();
+  const artwork=new Map();
+  function syncArt(){
+    for(const card of carousel.cards){
+      const texture=artwork.get(card);
+      if(texture?.image===card.artwork)continue;
+      texture?.dispose();artwork.delete(card);
+      if(card.artwork){const next=new CanvasTexture(card.artwork);next.colorSpace=SRGBColorSpace;artwork.set(card,next);}
+    }
+  }
   const panels = [];
   let geometry,guideGeometry;
   let phase=carousel.position,previousPosition=carousel.position;
@@ -116,13 +127,13 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
     const material=new ShaderMaterial({uniforms:{
       screenshot:{value:textures.get(textureSource(card))},dimensions:{value:new Vector2()},
       contentDimensions:{value:new Vector2(1,1)},imageScale:{value:new Vector2(1,1)},
-      borderColor:{value:[0,0,0,1]},backColor:{value:[0,0,0,1]},imageTint:{value:[0,0,0,0]},showImage:{value:true},solidBack:{value:false},borderWidth:{value:0},
+      borderColor:{value:[0,0,0,1]},backColor:{value:[0,0,0,1]},imageTint:{value:[0,0,0,0]},mirrorColor:{value:[0,0,0,0]},showImage:{value:true},solidBack:{value:false},borderWidth:{value:0},
       cornerRadius:{value:0},fade:{value:1},shade:{value:0},focused:{value:0}},
       vertexShader,fragmentShader,transparent:true,side:DoubleSide,depthTest:true,depthWrite:true,
       forceSinglePass:true,polygonOffset:true,polygonOffsetFactor:0,polygonOffsetUnits:0});
     const mesh=new Mesh(geometry,material);
     const guide=new LineLoop(guideGeometry,new LineBasicMaterial({color:0x71808a,transparent:true,opacity:.42,depthWrite:false}));
-    const panel={card,mesh,guide,material,surface:{scale:1,target:1}};
+    const panel={card,mesh,guide,material,surface:{scale:0,target:0}};
     mesh.userData.panel=panel;panels.push(panel);scene.add(mesh,guide);
   };
   const syncPool=(slots)=>{
@@ -132,7 +143,7 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
     panels.forEach((panel,i)=>{
       panel.offset=range.first+i-phase;
       panel.card=carousel.cards[projectIndex(range.first+i,carousel.count)];
-      panel.material.uniforms.screenshot.value=textures.get(textureSource(panel.card));
+      panel.material.uniforms.screenshot.value=artwork.get(panel.card)||textures.get(textureSource(panel.card));
     });
   };
   const resize = () => {
@@ -150,9 +161,9 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
       uniforms.cornerRadius.value=Math.min(Number(root.dataset.cornerRadius)||0,cardWidth/2,card.height/2);
       uniforms.borderWidth.value=Number(root.dataset.borderWidth)||0;
       uniforms.solidBack.value=root.dataset.backFace==='solid';
-      uniforms.showImage.value=root.dataset.showImage!=='false';
-      for(const key of ['backColor','borderColor','imageTint']){
-        const uniform=uniforms[key], hex=root.dataset[key] || '#00000000';
+      uniforms.showImage.value=!!panel.card.artwork||root.dataset.showImage!=='false';
+      for(const key of ['backColor','borderColor','imageTint','mirrorColor']){
+        const uniform=uniforms[key], hex=key==='imageTint'&&panel.card.artwork?'#00000000':root.dataset[key] || '#00000000';
         if(uniform.hex!==hex){
           uniform.hex=hex;
           const rgba=hex.length===7?hex+'ff':hex;
@@ -161,7 +172,7 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
       }
       const image=panel.material.uniforms.screenshot.value.image;
       if (!image) return;
-      const frame=imageFrame(cardWidth,card.height,(image.naturalWidth||image.width)/(image.naturalHeight||image.height),root.dataset.imageFit,Number(root.dataset.imagePadding||0));
+      const frame=imageFrame(cardWidth,card.height,(image.naturalWidth||image.width)/(image.naturalHeight||image.height),panel.card.artwork?'fit':root.dataset.imageFit,panel.card.artwork?0:Number(root.dataset.imagePadding||0));
       panel.material.uniforms.contentDimensions.value.set(frame.contentWidth,frame.contentHeight);
       panel.material.uniforms.imageScale.value.set(frame.uvScaleX,frame.uvScaleY);
     });
@@ -211,8 +222,13 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
       mesh.position.set(pose.x,pose.y,pose.z);mesh.rotation.y=pose.angle;
       const hover=panel===hovered && !carousel.pointer && !carousel.reducedMotion.matches;
       const amount=Number(root.dataset.hoverAmount)||0;
-      mesh.scale.setScalar(hover && root.dataset.hoverEffect==='zoom'?1+amount/100:1);
-      if(hover && root.dataset.hoverEffect==='lift')mesh.position.y+=amount;
+      const target=hover?1:0;
+      if(panel.surface.target!==target){
+        panel.surface.target=target;
+        gsap.to(panel.surface,{scale:target,duration:(Number(root.dataset.hoverDuration)||0)/1000,ease:'power2.out',overwrite:true,onUpdate:draw});
+      }
+      mesh.scale.setScalar(root.dataset.hoverEffect==='zoom'?1+panel.surface.scale*amount/100:1);
+      if(root.dataset.hoverEffect==='lift')mesh.position.y+=panel.surface.scale*amount;
       mesh.visible=fade>.001 && Boolean(material.uniforms.screenshot.value.image);
       if(mesh.visible)visibleCount++;
       panel.guide.position.copy(mesh.position);panel.guide.rotation.copy(mesh.rotation);
@@ -246,7 +262,7 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
       const x = Math.abs((hit.uv.x - .5) * width) - width / 2 + r;
       const y = Math.abs((hit.uv.y - .5) * height) - height / 2 + r;
       if (Math.hypot(Math.max(x, 0), Math.max(y, 0)) + Math.min(Math.max(x, y), 0) > r) continue;
-      return panel;
+      panel.hitUv=hit.uv;return panel;
     }
     return null;
   };
@@ -255,7 +271,10 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
   carousel.pointerDown = function (event) {
     originalPointerDown.call(this, event);
     if (ready && !contextLost && this.pointer?.id === event.pointerId) {
-      this.pointer.card = pick(event)?.card || null;
+      const hit=pick(event);
+      this.pointer.card=hit?.card||null;
+      const b=hit?.card.buttonBounds,uv=hit?.hitUv;
+      if(b && uv.x>=b.left && uv.x<=b.right && 1-uv.y>=b.top && 1-uv.y<=b.bottom)this.pointer.buttonLink=hit.card.dataset.buttonLink;
     }
     pointerLocation = null; hovered = null;
   };
@@ -277,7 +296,8 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
     });
     draw();
   });
-  on(root,'playground-change',draw);
+  on(root,'playground-change',()=>{syncArt();draw();});
+  on(root,'artwork-change',()=>{syncArt();draw();});
   on(root,'slot-guides-change',draw);
   on(canvas, 'webglcontextlost', event => {
     event.preventDefault(); contextLost = true;
@@ -328,7 +348,7 @@ export function attachResponsiveCarousel(carousel, {textureSource=card=>card.que
     root.classList.remove('has-webgl-carousel');
     delete root.dataset.renderer;
     panels.forEach(({ material, surface,guide }) => { gsap.killTweensOf(surface); material.dispose();guide.material.dispose(); });
-    geometry?.dispose();guideGeometry?.dispose(); textures.forEach(texture => texture.dispose());
+    artwork.forEach(texture=>texture.dispose());geometry?.dispose();guideGeometry?.dispose(); textures.forEach(texture => texture.dispose());
     renderer.dispose(); renderer.forceContextLoss(); canvas.remove();
   };
 }

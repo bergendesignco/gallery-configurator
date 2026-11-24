@@ -343,6 +343,7 @@
       if (this.stage.hasPointerCapture(pointer.id)) this.stage.releasePointerCapture(pointer.id);
       if (!pointer.dragging) {
         this.animateTo(Math.round(this.position));
+        if(!canceled && pointer.buttonLink){location.assign(pointer.buttonLink);return;}
         if (!canceled && pointer.card) this.openProject(Number(pointer.card.dataset.slideIndex));
         return;
       }

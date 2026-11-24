@@ -22,7 +22,19 @@ export function createImageEffects(host,id){
   const tint=element('filter',{id:id+'-tint','color-interpolation-filters':'sRGB'},defs);
   const flood=element('feFlood',{},tint);
   element('feComposite',{in2:'SourceGraphic',operator:'atop'},tint);
+  const cardFilter=shadow.cloneNode(true);
+  cardFilter.id=id+'-card-shadow';defs.append(cardFilter);
   return options=>{
+    const angleCard=(options.cardShadowAngle??90)*Math.PI/180;
+    cardFilter.querySelector('feMorphology').setAttribute('radius',options.cardShadowSpread||0);
+    cardFilter.querySelector('feGaussianBlur').setAttribute('stdDeviation',(options.cardShadowBlur||0)/2);
+    const shift=cardFilter.querySelector('feOffset');
+    shift.setAttribute('dx',Math.cos(angleCard)*(options.cardShadowDistance||0));
+    shift.setAttribute('dy',Math.sin(angleCard)*(options.cardShadowDistance||0));
+    cardFilter.querySelector('feFlood').setAttribute('flood-color',options.cardShadowColor||'#000');
+    const filters=[];
+    if(options.shadowEnabled)filters.push('url(#'+shadow.id+')');
+    if(options.cardShadow)filters.push('url(#'+cardFilter.id+')');
     const angle=options.shadowAngle*Math.PI/180;
     spread.setAttribute('radius',options.shadowSpread);
     blur.setAttribute('stdDeviation',options.shadowBlur/2);
@@ -30,7 +42,7 @@ export function createImageEffects(host,id){
     offset.setAttribute('dy',Math.sin(angle)*options.shadowDistance);
     color.setAttribute('flood-color',options.shadowColor);
     flood.setAttribute('flood-color',options.imageTint);
-    host.style.setProperty('--gc-shadow-filter',options.shadowEnabled?'url(#'+shadow.id+')':'none');
+    host.style.setProperty('--gc-shadow-filter',filters.join(' ')||'none');
     host.style.setProperty('--gc-image-filter',options.imageTint.endsWith('00')&&options.imageTint.length===9?'none':'url(#'+tint.id+')');
   };
 }

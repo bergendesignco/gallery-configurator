@@ -28,7 +28,7 @@ standaloneSummary = `runtime ${Math.round(runtimeCode.length/1024)} KB, studio $
 // These are the named Three.js bindings used by the preserved spiral files.
 const remoteBindings = {
   three: [
-    'BufferGeometry', 'Float32BufferAttribute', 'LineBasicMaterial', 'LineLoop',
+    'CanvasTexture','BufferGeometry', 'Float32BufferAttribute', 'LineBasicMaterial', 'LineLoop',
     'DoubleSide', 'Mesh', 'NoToneMapping', 'PerspectiveCamera', 'PlaneGeometry',
     'Raycaster', 'Scene', 'ShaderMaterial', 'SRGBColorSpace', 'TextureLoader',
     'Vector2', 'WebGLRenderer',

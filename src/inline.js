@@ -16,9 +16,16 @@ function settings(preset, overrides = {}) {
     autoplay: preset === 'timed', ...(preset === 'wall' ? {background:'#101720', ink:'#f2f5f8'} : {})
   };
   for (const [key,value] of Object.entries(overrides)) {
-    if (key === 'mobileCardWidth' || key === 'mobileGap') {
+    if (key.startsWith('mobile') && base[key]===null) {
       if (Number.isFinite(value) && value >= 0) base[key] = value;
     } else if (key !== 'preset' && Object.hasOwn(base,key) && typeof value === typeof base[key]) base[key] = value;
+  }
+  if(preset==='spiral'){
+    if(!('mobileSizing' in overrides))base.mobileSizing=base.mobileGap!=null||base.mobileCardWidth!=null;
+    if(!('titleCustom' in overrides))base.titleCustom=Boolean(base.titleSize||base.titlePalette==='custom'||base.titleWeight!=='inherit');
+    if(!('bodyCustom' in overrides))base.bodyCustom=Boolean(base.descriptionCustom||base.descriptionSize);
+    if(!('overlayEnabled' in overrides))base.overlayEnabled=base.imageTintOpacity>0;
+    if(!('cardBorderEnabled' in overrides))base.cardBorderEnabled=base.borderWidth>0;
   }
   return base;
 }
@@ -68,6 +75,7 @@ function installedSettings(options) {
 function pageCode(source, options) {
   const base = settings(options.preset);
   const opts = {preset:options.preset, colorSource:options.colorSource, typeSource:options.typeSource};
+  if(options.preset==='spiral')for(const key of ['mobileSizing','titleCustom','bodyCustom','overlayEnabled','cardBorderEnabled'])opts[key]=options[key];
   if (usesMinimumHeight(options.preset)) opts.stageHeight = options.stageHeight;
   for (const key of Object.keys(base)) {
     if (options.colorSource === 'section' && customColors.has(key)) continue;

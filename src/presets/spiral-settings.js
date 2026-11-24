@@ -1,5 +1,6 @@
+import {spiralDesignDefaults} from './spiral-design.js';
 export const spiralDefaults = Object.freeze({
-  containerWidth: 100, stageHeight: 680, spiralWidth: 87, cardWidth: 280,
+  ...spiralDesignDefaults, containerWidth: 100, stageHeight: 680, spiralWidth: 87, cardWidth: 280,
   spiralRise: 52, spiralRiseUnit: 'px', aspectRatio: '16:9', spiralGap: 3,
   fit: 'cover', imagePadding: 0, showSlots: false,
 });

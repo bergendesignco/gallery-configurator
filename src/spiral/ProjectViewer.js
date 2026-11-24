@@ -5,7 +5,8 @@ export class ProjectViewer {
     this.root = root;
     this.cards = cards;
     this.projects = projects;
-    this.assetDirectory = new URL('.', cards[0].querySelector('img').src);
+    const source=cards[0].querySelector('img').src;
+    this.assetDirectory=new URL('.', /^(https?:|file:)/.test(source)?source:document.baseURI);
     this.dialog = document.createElement('dialog');
     this.dialog.className = 'project-dialog portfolio-project-dialog';
     const titleId = `${root.id}-project-title`;
