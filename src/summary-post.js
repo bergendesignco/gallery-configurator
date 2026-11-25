@@ -79,8 +79,8 @@ function updatePills(list, values) {
   list.hidden = !labels.length;
 }
 
-function projectSlides(post, item, base) {
-  const gallery = (post?.blocks ?? []).flatMap(block => block.gallery?.slides ?? []).flatMap(slide => {
+function projectSlides(post, base) {
+  return (post.blocks ?? []).flatMap(block => block.gallery?.slides ?? []).flatMap(slide => {
     const src = webUrl(slide.imageUrl, base);
     return src ? [{
       src, alt: slide.alt?.trim() || slide.title?.trim() || '',
@@ -88,14 +88,12 @@ function projectSlides(post, item, base) {
       description: slide.descriptionHtml || '',
     }] : [];
   });
-  if (gallery.length) return gallery;
-  const cover = webUrl(post?.featuredImageUrl, base) || webUrl(item.src, base);
-  return cover ? [{src:cover, alt:item.alt || '', caption:'', description:''}] : [];
 }
 
-export function createPostDialog(item, options, closeDialog) {
+export function createPostDialog(postUrl, options, closeDialog) {
   const dialog = document.createElement('dialog');
   dialog.className = 'gc-post-dialog';
+  dialog.setAttribute('aria-label', 'Project details');
   dialog.dataset.desktopLayout = options.popupDesktopLayout === 'drawer' ? 'drawer' : 'split';
   dialog.dataset.reducedMotion = String(Boolean(options.reducedMotion));
   if (options.popupPadding > 0) dialog.style.setProperty('--post-padding', options.popupPadding + 'px');
@@ -107,13 +105,17 @@ export function createPostDialog(item, options, closeDialog) {
   }
   dialog.innerHTML = `
     <div class="gc-post-toolbar"><button type="button" class="gc-post-icon gc-post-close" aria-label="Close project" autofocus>${closeIcon}</button></div>
-    <div class="gc-post-layout">
+    <div class="gc-post-pending" data-loading>
+      <span class="gc-post-spinner" aria-hidden="true"></span>
+      <p class="gc-post-status" role="status">Loading project…</p>
+      <a class="gc-post-link gc-post-error-link" hidden>View full project</a>
+    </div>
+    <div class="gc-post-layout" hidden>
       <div class="gc-post-copy">
         <h2 class="gc-post-title"></h2>
         <div class="gc-post-reading"></div>
         <ul class="gc-post-pills gc-post-categories" aria-label="Project categories" hidden></ul>
         <ul class="gc-post-pills gc-post-tags" aria-label="Project tags" hidden></ul>
-        <p class="gc-post-status" role="status">Loading project…</p>
         <a class="gc-post-link">View full project</a>
       </div>
       <section class="gc-post-gallery" aria-label="Project images" hidden>
@@ -141,7 +143,9 @@ export function createPostDialog(item, options, closeDialog) {
   const content = find('.gc-post-reading');
   const categories = find('.gc-post-categories');
   const tags = find('.gc-post-tags');
+  const pending = find('.gc-post-pending');
   const status = find('.gc-post-status');
+  const errorLink = find('.gc-post-error-link');
   const cta = find('.gc-post-link');
   const gallery = find('.gc-post-gallery');
   const layout = find('.gc-post-layout');
@@ -157,7 +161,7 @@ export function createPostDialog(item, options, closeDialog) {
   let slides = [];
   let index = 0;
   let pointer = null;
-  let projectUrl = webUrl(item.postUrl, location.href);
+  let projectUrl = webUrl(postUrl, location.href);
 
   function orderPanels() {
     if (narrow.matches) layout.prepend(gallery);
@@ -224,8 +228,7 @@ export function createPostDialog(item, options, closeDialog) {
     // Squarespace's JSON may preserve HTML character references in the title.
     const name = post.title?.replace(/&(?:#(?:[0-9]+|x[0-9a-f]+)|[a-z][a-z0-9]+);/gi,
       reference => parse(reference).textContent);
-    setIdentity(name || item.title, projectUrl);
-    content.replaceChildren();
+    setIdentity(name, projectUrl);
     if (options.popupDescription !== false) {
       for (const block of post.blocks ?? []) {
         if (!readableBlocks.has(block.type)) continue;
@@ -233,14 +236,10 @@ export function createPostDialog(item, options, closeDialog) {
         const body = blockRoot.querySelector('.sqs-html-content,.sqs-block-content') || blockRoot;
         appendReading(content, readingContent(body, projectUrl));
       }
-      if (!content.childElementCount) {
-        appendReading(content, readingContent(parse(post.excerptHtml || item.description), projectUrl));
-      }
     }
     updatePills(categories, post.categories);
     updatePills(tags, post.tags);
-    setSlides(projectSlides(post, item, projectUrl));
-    status.hidden = true;
+    setSlides(projectSlides(post, projectUrl));
   }
 
   closeButton.addEventListener('click', closeDialog);
@@ -266,21 +265,25 @@ export function createPostDialog(item, options, closeDialog) {
     if (Math.abs(x) > 35 && Math.abs(x) > Math.abs(y) * 1.2) showSlide(index + (x < 0 ? 1 : -1));
   });
 
-  setIdentity(item.title, projectUrl);
-  if (options.popupDescription !== false) {
-    appendReading(content, readingContent(parse(item.description), projectUrl));
-  }
-  setSlides(projectSlides(null, item, projectUrl));
-
   return {
     dialog,
     async load() {
       try {
         const post = await loadPostData(projectUrl, {signal:controller.signal, includeSeo:false});
-        if (!controller.signal.aborted) render(post);
+        if (controller.signal.aborted) return;
+        render(post);
+        if (slides.length) await image.decode().catch(() => {});
+        if (controller.signal.aborted) return;
+        pending.hidden = true;
+        layout.hidden = false;
       } catch {
         if (controller.signal.aborted) return;
+        pending.removeAttribute('data-loading');
         status.textContent = 'The project details couldn’t load.';
+        if (projectUrl && options.popupButton !== false) {
+          errorLink.href = projectUrl;
+          errorLink.hidden = false;
+        }
       }
     },
     destroy() {

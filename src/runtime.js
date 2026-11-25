@@ -98,7 +98,7 @@ export function mountGallery(host,items,initial={},nativeList=null){
   if(options.clickAction==='link'){const href=safeLink(item.link);if(href)window.open(href,'_blank','noopener,noreferrer');return;}
   const opener=document.activeElement;if(dialog)closeDialog();restoreFocus=opener;
   if(item.postUrl){
-   postPopup=createPostDialog(item,renderOptions(),closeDialog);
+   postPopup=createPostDialog(item.postUrl,renderOptions(),closeDialog);
    dialog=postPopup.dialog;
    showDialog();
    postPopup.load();

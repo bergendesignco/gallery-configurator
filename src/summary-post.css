@@ -149,7 +149,31 @@
   box-shadow: inset 0 0 0 1px var(--post-line);
 }
 
-.gc-post-dialog .gc-post-status { margin: 12px 0 0; color: var(--post-muted); font-size: 14px; }
+.gc-post-pending {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  min-block-size: min(28rem, 65dvh);
+  padding: 62px var(--post-gutter) 32px;
+  text-align: center;
+}
+.gc-post-dialog[data-desktop-layout="drawer"] .gc-post-pending { min-block-size: min(36rem, 100dvh); }
+.gc-post-status { margin: 0; color: var(--post-muted); font-size: 14px; }
+.gc-post-spinner {
+  inline-size: 28px;
+  block-size: 28px;
+  border: 2px solid var(--post-line);
+  border-block-start-color: var(--post-accent);
+  border-radius: 50%;
+}
+.gc-post-pending:not([data-loading]) .gc-post-spinner { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .gc-post-dialog[data-reduced-motion="false"] .gc-post-spinner { animation: gc-post-spin .8s linear infinite; }
+}
+@keyframes gc-post-spin { to { transform: rotate(1turn); } }
 
 .gc-post-dialog .gc-post-link {
   display: inline-flex;
