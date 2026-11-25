@@ -1,3 +1,4 @@
+import {loadPostData} from "./post-data.js";
 import {cardDesignDefaults,resolveDesignColors} from './card-design.js';
 import {loadPost} from './summary-post.js';
 import {mountCarousel} from './presets/carousels.js';
@@ -382,4 +383,4 @@ export function embed({selector,type='gallery',options={}}={}){
  }catch(error){destroy();throw error;}
  return handle;
 }
-window.GalleryStudioRuntime={mountGallery,embed,presets};
+window.GalleryStudioRuntime={mountGallery,embed,presets,loadPostData};
