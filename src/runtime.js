@@ -1,5 +1,7 @@
+import {createImageEffects} from './image-effects.js';
+import {styleLayout} from './layout-finish.js';
 import {loadPostData} from "./post-data.js";
-import {cardDesignDefaults,resolveDesignColors} from './card-design.js';
+import {cardDesignDefaults,resolveDesignColors,layoutDesignDefaults} from './card-design.js';
 import {createPostDialog} from './summary-post.js';
 import {mountCarousel} from './presets/carousels.js';
 import {mountSpatial} from './presets/spatial.js';
@@ -89,13 +91,13 @@ export function installStyles(preset) {
 }
 function textHTML(html){const t=document.createElement('template');t.innerHTML=html||'';return t.content.textContent||'';}
 export function mountGallery(host,items,initial={},nativeList=null){
- let options=mergeOptions(defaults,initial);let engine=null;let dialog=null;let postPopup=null;let restoreFocus=null;let active=0;let loadFrame=0;
- let currentFamily,releaseStyles;
+ let options=mergeOptions({...defaults,...layoutDesignDefaults(initial.preset??defaults.preset,initial)},initial);let engine=null;let dialog=null;let postPopup=null;let restoreFocus=null;let active=0;let loadFrame=0;
+ let currentFamily,releaseStyles,imageEffects;
  host.classList.add('gc-stage');host.setAttribute('role','region');host.setAttribute('aria-label','Gallery preview');
  function closeDialog(){if(!dialog)return;postPopup?.destroy();postPopup=null;dialog.close();dialog.remove();dialog=null;engine?.setSuspended?.(false);restoreFocus?.focus({preventScroll:true});}
  function open(item,index){
-  if(options.clickAction==='none')return;
-  if(options.clickAction==='link'){const href=safeLink(item.link);if(href)window.open(href,'_blank','noopener,noreferrer');return;}
+  if(options.clickAction==='none'||options.clickAction==='source'&&!item.link)return;
+  if(options.clickAction==='link'||options.clickAction==='source'){const href=safeLink(item.link);if(href)window.open(href,'_blank','noopener,noreferrer');return;}
   const opener=document.activeElement;if(dialog)closeDialog();restoreFocus=opener;
   if(item.postUrl){
    postPopup=createPostDialog(item.postUrl,renderOptions(),closeDialog);
@@ -118,47 +120,81 @@ export function mountGallery(host,items,initial={},nativeList=null){
   attachGalleryDialog(host,dialog);dialog.showModal();engine?.setSuspended?.(true);
   dialog.addEventListener('cancel',e=>{e.preventDefault();closeDialog();});dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDialog();}});
  }
- function makeCard(item,index,settings={}){
+ function buildCard(item,index,settings={}){
+  settings={...settings,description:options.showDescription};
   if(nativeList)return nativeList.makeCard(item,index,settings,options,open);
-  const b=document.createElement('button');b.type='button';b.className='gc-card';b.setAttribute('aria-label',item.title||`Image ${index+1}`);
-  const media=document.createElement('span');media.className='gc-card-media';if(item.src && options.popupImage!==false){media.append(createImage(item));b.append(media);}
+  const buttonUrl=options.showButton && item.buttonLabel && safeLink(item.link);
+  const hasLink=Boolean(buttonUrl);
+  const b=document.createElement(hasLink?'div':'button');
+  if(hasLink){b.tabIndex=0;b.setAttribute('role','group');}
+  else b.type='button';
+  b.className='gc-card';b.setAttribute('aria-label',item.title||`Image ${index+1}`);
+  const media=document.createElement('span');media.className='gc-card-media';if(item.src && options.showImage!==false){media.append(createImage(item));b.append(media);}
   const copy=document.createElement('span');copy.className='gc-card-copy';
   if(settings.caption!==false&&options.showTitles&&item.title){const title=document.createElement('span');title.className='gc-card-title';title.textContent=item.title;copy.append(title);}
   if(settings.description&&item.description){const description=document.createElement('span');description.className='gc-card-description';description.textContent=textHTML(item.description);copy.append(description);}
-  if(copy.childNodes.length)b.append(copy);b.addEventListener('click',()=>open(item,index));return b;
+  if(hasLink){const link=document.createElement('a');link.className='gc-card-button';link.href=buttonUrl;link.textContent=item.buttonLabel;copy.append(link);}
+  if(copy.childNodes.length)b.append(copy);
+  const activate=()=>{if(options.clickAction!=='source'||!item.buttonLabel)open(item,index);};
+  b.addEventListener('click',e=>{if(!e.target.closest('a'))activate();});
+  if(hasLink)b.addEventListener('keydown',e=>{if(e.target===b&&['Enter',' '].includes(e.key)){e.preventDefault();activate();}});
+  return b;
+ }
+ function makeCard(item,index,settings){
+  const card=buildCard(item,index,settings);
+  if(options.aspectRatio==='original'){
+    const img=card.querySelector('.gc-card-media img');
+    if(img){
+      const ratio=(w,h)=>{if(w>0&&h>0)card.style.setProperty('--gc-original-ratio',w+' / '+h);};
+      const dimensions=img.dataset.imageDimensions?.split('x').map(Number);
+      if(dimensions?.length===2)ratio(...dimensions);
+      else if(img.naturalWidth)ratio(img.naturalWidth,img.naturalHeight);
+      else img.addEventListener('load',()=>ratio(img.naturalWidth,img.naturalHeight),{once:true});
+    }
+  }
+  return card;
  }
  const mq=matchMedia('(prefers-reduced-motion: reduce)');
  const phone=matchMedia('(max-width: 660px)');
  function renderOptions(){
   const resolved={...resolveDesignColors(host,options),reducedMotion:options.reducedMotion||mq.matches};
-  if(phone.matches&&(options.preset!=='spiral'||options.mobileSizing)){
-   if(options.preset==='spiral'){
-     for(const [base,override] of [['spiralWidth','mobileSpiralWidth'],['carouselPadding','mobileCarouselPadding'],['cardPadding','mobileCardPadding']])
-       if(options[override]!=null)resolved[base]=options[override];
-     if(options.mobileHeightMode && options.mobileHeightMode!=='inherit'){
+  if(phone.matches&&options.mobileSizing){
+   for(const [base,key] of [['carouselPadding','mobileCarouselPadding'],['cardPadding','mobileCardPadding']])if(options[key]!=null)resolved[base]=options[key];
+   if(options.preset==='spiral'&&options.mobileSpiralWidth!=null)resolved.spiralWidth=options.mobileSpiralWidth;
+   if(options.mobileHeightMode && options.mobileHeightMode!=='inherit'){
        resolved.heightMode=options.mobileHeightMode;
        resolved.stageHeight=options.mobileStageHeight??resolved.stageHeight;
        resolved.viewportHeight=options.mobileViewportHeight;
      }
-   }
    if(options.mobileCardWidth!=null)resolved.cardWidth=options.mobileCardWidth;
    if(options.mobileGap!=null)resolved[options.preset==='spiral'?'spiralGap':'gap']=options.mobileGap;
   }
-  resolved.phoneWidthOverride=phone.matches && options.mobileCardWidth!=null;
-  if(options.preset==='stack')resolved.stackCardWidth=phone.matches && options.mobileCardWidth!=null
+  if(options.preset!=='spiral'){
+    if(resolved.heightMode==='viewport')resolved.stageHeight=innerHeight*resolved.viewportHeight/100;
+    if(resolved.heightMode==='auto')resolved.stageHeight=usesMinimumHeight(options.preset)?0:Math.min(innerHeight,options.preset==='stack'?680:590);
+  }
+  resolved.phoneWidthOverride=phone.matches && options.mobileSizing && options.mobileCardWidth!=null;
+  if(options.preset==='stack')resolved.stackCardWidth=phone.matches && options.mobileSizing && options.mobileCardWidth!=null
    ? options.mobileCardWidth : Math.max(360,options.cardWidth*2.2);
   return resolved;
  }
  function styleHost(){
   host.classList.toggle('gc-hide-controls',options.showControls===false);
-  const design=resolveDesignColors(host,options);
+  const design=renderOptions();
   styleAppearance(host,design);
+  applyGalleryTheme(host,design);
+  if(options.preset!=='spiral'){
+    styleLayout(host,design);
+    if(design.overlayEnabled || design.shadowEnabled || imageEffects){
+      imageEffects??=createImageEffects(host,'gc-image-'+crypto.randomUUID());
+      imageEffects({...design,cardShadow:false,imageTint:design.overlayEnabled?design.imageTint:'#00000000'});
+    }
+  }
   host.style.setProperty('--gc-fit',options.fit);
   host.style.setProperty('--gc-card-radius',options.radius+'px');
-  applyGalleryTheme(host,design);
  }
  function render(initialIndex=0){
-  closeDialog();engine?.destroy();engine=null;nativeList?.restore();cancelAnimationFrame(loadFrame);host.replaceChildren();host.classList.add('gc-stage');host.style.height='';
+  closeDialog();engine?.destroy();engine=null;nativeList?.restore();cancelAnimationFrame(loadFrame);host.replaceChildren();imageEffects=null;host.classList.add('gc-stage');host.style.height='';
   const family=styleFamily(options.preset);
   if(family!==currentFamily){
    releaseStyles?.();
@@ -187,12 +223,20 @@ export function mountGallery(host,items,initial={},nativeList=null){
  }
  const motion=()=>render(active);
  function resizePhone(){
-  if(options.preset!=='spiral'&&options.mobileCardWidth==null && options.mobileGap==null)return;
+  if(options.preset!=='spiral'){if(options.mobileSizing)render(active);return;}
   if(engine?.setGeometry)engine.setGeometry(renderOptions());
   else if(options.preset==='spiral')engine?.update(renderOptions());
   else render(active);
  }
  try{render();}catch(error){releaseStyles?.();nativeList?.restore();throw error;}
+ let lastWindowHeight=innerHeight;
+ function resizeHeight(){
+   if(lastWindowHeight===innerHeight)return;
+   lastWindowHeight=innerHeight;
+   const mode=renderOptions().heightMode;
+   if(options.preset!=='spiral' && ['viewport','auto'].includes(mode))render(active);
+ }
+ window.addEventListener('resize',resizeHeight);
  mq.addEventListener('change',motion);
  phone.addEventListener('change',resizePhone);
  return {update(next){const old=options.preset;
@@ -211,7 +255,7 @@ export function mountGallery(host,items,initial={},nativeList=null){
   if(changed.includes('typeSource'))nativeList?.setType(options.typeSource);
   return;
  }
- if(old==='spiral'&&options.preset==='spiral'&&engine?.update){styleHost();engine.update(resolved);}else render(old===options.preset?active:0);},goTo(i){engine?.goTo?.(i);},setPlaying(value){options.autoplay=value;engine?.setPlaying?.(value);},getOptions(){return {...options};},getActive(){return active;},destroy(){closeDialog();cancelAnimationFrame(loadFrame);engine?.destroy();nativeList?.restore();mq.removeEventListener('change',motion);phone.removeEventListener('change',resizePhone);host.replaceChildren();host.classList.remove('gc-stage','gc-hide-controls');releaseStyles?.();}};
+ if(old==='spiral'&&options.preset==='spiral'&&engine?.update){styleHost();engine.update(resolved);}else render(old===options.preset?active:0);},goTo(i){engine?.goTo?.(i);},setPlaying(value){options.autoplay=value;engine?.setPlaying?.(value);},getOptions(){return {...options};},getActive(){return active;},destroy(){window.removeEventListener('resize',resizeHeight);closeDialog();cancelAnimationFrame(loadFrame);engine?.destroy();nativeList?.restore();mq.removeEventListener('change',motion);phone.removeEventListener('change',resizePhone);host.replaceChildren();host.classList.remove('gc-stage','gc-hide-controls');releaseStyles?.();}};
 }
 // Self-contained exports may each include a copy of the runtime on the same page.
 const inlineRegistry=window[Symbol.for('gallery-studio.inline')]??={mounts:new WeakMap(),scrollBoundaries:new WeakMap()};
@@ -283,7 +327,7 @@ export function embed({selector,type='gallery',options={}}={}){
  if(!readSource(source,type).length)return null;
  const host=document.createElement('div'),slot=document.createElement('div');
  host.dataset.sourceType=type;host.className='gc-embed';slot.className='gc-viewport-slot';slot.append(host);
- let current={...mergeOptions(defaults,options),previewScroll:false};
+ let current={...mergeOptions({...defaults,...layoutDesignDefaults(options.preset??defaults.preset,options),...(type==='summary'?{showButton:false}:{})},options),previewScroll:false};
  let gallery=null,restoreScroll=null,restoreViewport=null,restoreBlock=null,stopEdit=null,destroyed=false,hidden=[];
  let listWidth=null, editPreview=false, clonedTrack=null;
  function syncWidth(){

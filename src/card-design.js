@@ -1,8 +1,8 @@
-import {additionalPaints} from './presets/spiral-design.js';
+import {additionalPaints,spiralDesignDefaults} from './presets/spiral-design.js';
 // Register a layout here when its renderer supports the shared content and design roles.
-export const cardDesignLayouts = new Set(['spiral']);
+export const cardDesignLayouts = new Set(['spiral','stack','infinite','arc','arc-tabs','timed','showcase','wall','ring','angled']);
 export const themeSwatches = { white:'Lightest', lightAccent:'Light', accent:'Accent', darkAccent:'Dark', black:'Darkest' };
-export const designColors = [...additionalPaints,'titleColor','descriptionColor','popupColor','popupInk','shadowColor','imageTint','controlFill','controlInk','backColor','spiralRim','background','ink','accent'];
+export const designColors = [...additionalPaints,'borderColor','titleColor','descriptionColor','popupColor','popupInk','shadowColor','imageTint','controlFill','controlInk','backColor','spiralRim','background','ink','accent'];
 export const cardDesignDefaults = {
   showImage:true, showDescription:false, showButton:false, cardPadding:0,
   popupImage:true, popupTitle:true, popupDescription:true, popupButton:true,
@@ -62,4 +62,17 @@ export function resolveDesignColors(host,options) {
     resolved[key]=alpha===255?hex:hex+alpha.toString(16).padStart(2,'0');
   }
   return resolved;
+}
+
+// Read older saved layouts using the visibility and finishes they originally used.
+export function layoutDesignDefaults(preset, saved = {}) {
+  if (preset === 'spiral') return {};
+  const spatial = ['wall','ring','angled'].includes(preset);
+  return {
+    ...spiralDesignDefaults, aspectRatio:'layout', imagePadding:0, cardAlign:'layout', cardOrder:'layout',
+    showDescription:['stack','arc-tabs','timed'].includes(preset), showButton:!spatial,
+    pauseOnHover:true, mobileSizing:saved.mobileCardWidth!=null || saved.mobileGap!=null,
+    cardBorderEnabled:saved.borderWidth>0, overlayEnabled:saved.overlayOpacity>0,
+    imageTint:saved.overlayColor || '#142036', imageTintOpacity:saved.overlayOpacity || 0
+  };
 }

@@ -224,7 +224,7 @@ export function mountCarousel({ host, items = [], initialIndex = 0, options = {}
   let hoverTiltX = 0;
   let hoverTiltY = 0;
 
-  const paused = () => suspended || hovered || focused || offscreen || document.hidden || !!drag;
+  const paused = () => suspended || (options.pauseOnHover && hovered) || focused || offscreen || document.hidden || !!drag;
   const nearest = index => {
     const selected = modulo(Math.round(position), count);
     let delta = modulo(index - selected, count);
@@ -356,7 +356,8 @@ export function mountCarousel({ host, items = [], initialIndex = 0, options = {}
       }
       slot.card.tabIndex = active ? 0 : -1;
       slot.card.setAttribute('aria-hidden', String(!active));
-      nativeList?.syncFocus(slot.card);
+      if(nativeList)nativeList.syncFocus(slot.card);
+      else {const link=slot.card.querySelector('.gc-card-button');if(link)link.tabIndex=active?0:-1;}
     });
     dots.forEach(({ fill }, index) => {
       fill.style.transform = `scaleX(${index === current ? clamp(elapsed / interval, 0, 1) : 0})`;

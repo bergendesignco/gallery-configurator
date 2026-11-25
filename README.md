@@ -7,7 +7,7 @@ Preview advanced layouts directly on native Squarespace Simple List Sections, Ga
 Paste these two lines into **Page Settings → Advanced → Page Header Code Injection**, save, and reload the page outside Squarespace Edit mode.
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.8.2/dist/gallery-inline.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/gh/bergendesignco/gallery-configurator@v0.9.0/dist/gallery-inline.js"></script>
 <script type="application/json" data-gallery-configure>{}</script>
 ```
 
@@ -31,7 +31,7 @@ Alternatively, put the CDN script once in **site-wide Footer Code Injection**. T
 
 If upgrading from the large inline installer, replace that installer with the CDN script. Use one installer per page. Pages without either Gallery Configurator marker keep their normal content.
 
-The URL is pinned to `v0.8.2`. Update the version in your script URL when you choose to install a newer release.
+The URL is pinned to `v0.9.0`. Update the version in your script URL when you choose to install a newer release.
 
 ## Controls
 
@@ -42,9 +42,9 @@ The URL is pinned to `v0.8.2`. Update the version in your script URL when you ch
 - **Navigation → Auto** uses titles when all items have them and dots when a title is missing. This applies to Arc with tabs and Timed carousel.
 - **Copy style / Paste style** transfers layout and appearance settings between sources. The destination supplies its content, links, click action, colors and typography.
 
-**Appearance** includes corner radius, borders and image fit. DOM layouts also offer shadows and hover effects. Spiral and Interactive ring support solid or mirrored backs. Stage edges can use the layout default, a hard cutoff or an adjustable gradient on moving galleries.
+**Elements, Image, Title, Description, and Card** group shared design controls. Gallery Blocks offer image and title. List Sections and Summary Blocks can also show body text and a button. Changing a shared style, such as title size or image border, carries that choice to compatible layouts while you try them in the configurator. Each layout keeps its own geometry.
 
-**Control styling** sets the navigation button size, shape, arrow and colors. **Title styling** controls size in rem, weight and color. Leave the layout defaults selected to follow the section theme and native typography.
+**Mobile** can override card width, spacing, and padding. A block set to follow its source stays within its Squarespace block. **Control styling** offers icon size, button padding, shape, background, and colors on layouts with navigation. Stacking cards use section scrolling. Ring and Spiral support back-face styling. Overlaid captions keep their layout-specific placement.
 
 ## Layouts
 

@@ -57,11 +57,14 @@ export function createSimpleList(slot,track,rows){
   }
   if(title&&(!options.showTitles||settings.caption===false))title.hidden=true;
   if(description&&!settings.description)description.hidden=true;
-  if(settings.thumbnail){
+  if(media&&!options.showImage){if(!copy)remember(media,['hidden']);media.hidden=true;}
+  if(!options.showButton){
    // The tile itself handles activation. Full text and the link live in the preview.
    const cta=card.querySelector('.list-item-content__button-wrapper')||card.querySelector('.list-item-content__button');
    if(cta){if(!copy)remember(cta,['hidden']);cta.hidden=true;}
-   if(content&&(!item.title||settings.caption===false)){
+   }
+  if(settings.thumbnail){
+   if(content&&(!item.title||settings.caption===false)&&!options.showDescription&&!options.showButton){
     if(!copy)remember(content,['hidden']);
     content.hidden=true;
    }
@@ -70,7 +73,7 @@ export function createSimpleList(slot,track,rows){
   const links=Array.from(card.querySelectorAll('a[href],button,input,select,textarea,[tabindex]'));
   if(!copy)for(const node of links)remember(node,['tabindex']);
   focusTargets.set(card,links.map(node=>[node,node.getAttribute('tabindex')]));
-  if(options.clickAction!=='none'&&(options.clickAction!=='link'||item.link)){
+  if(options.clickAction!=='none'&&options.clickAction!=='source'&&(options.clickAction!=='link'||item.link)){
    const action=document.createElement('button');
    action.type='button';action.className='gc-native-action';action.tabIndex=-1;
    action.setAttribute('aria-label',(options.clickAction==='link'?'Open link for ':'Open ')+name);

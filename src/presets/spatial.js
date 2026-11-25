@@ -203,7 +203,8 @@ export function mountSpatial(ctx) {
       card.classList.toggle('is-selected', primary && sourceIndex === active);
       if (primary) card.removeAttribute('aria-hidden');
       else card.setAttribute('aria-hidden', 'true');
-      nativeList?.syncFocus(card);
+      if(nativeList)nativeList.syncFocus(card);
+      else {const link=card.querySelector('.gc-card-button');if(link)link.tabIndex=card.tabIndex;}
     });
     if (announce) live.textContent = `Item ${active + 1} of ${count}${items[active].title ? `: ${items[active].title}` : ''}`;
     if (selected !== active) {
@@ -325,7 +326,7 @@ export function mountSpatial(ctx) {
 
   function draw(dt) {
     if (reduced || !count || suspended) return false;
-    const auto = playing && !hovered && !focused && !drag && inView && !document.hidden;
+    const auto = playing && !(options.pauseOnHover && hovered) && !focused && !drag && inView && !document.hidden;
     if (auto) {
       const advance = dt / duration;
       if (kind === 'angled') {

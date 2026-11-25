@@ -4,15 +4,16 @@ import { discoverSources, readSource } from './sources.js';
 import { createPanel, controlGroups } from './inline-panel.js';
 import launcherCSS from './inline-launcher.css';
 
+import {layoutDesignDefaults} from './card-design.js';
 const layouts = new Map(presets.map(layout => [layout.id, layout]));
-const customColors = new Set(['background', 'ink', 'accent', 'borderColor', 'overlayColor']);
+const customColors = new Set(['background', 'ink', 'accent']);
 // These preset defaults are shared by the live controls and compact page code.
-function settings(preset, overrides = {}) {
+function settings(preset, overrides = {}, sourceType) {
   const layout = layouts.get(preset);
   const base = {
-    ...defaults, ...(preset === 'spiral' ? spiralDefaults : {}), preset,
+    ...defaults, ...(preset === 'spiral' ? spiralDefaults : layoutDesignDefaults(preset,overrides)), preset,
     colorSource: 'section', typeSource: 'native',
-    cardWidth: layout.width, stageHeight: usesMinimumHeight(preset) ? 0 : preset === 'spiral' ? 680 : preset === 'wall' ? 660 : 540,
+    ...(sourceType==='summary'?{showButton:false}:{}),cardWidth: layout.width, stageHeight: usesMinimumHeight(preset) ? 0 : preset === 'spiral' ? 680 : preset === 'wall' ? 660 : 540,
     autoplay: preset === 'timed', ...(preset === 'wall' ? {background:'#101720', ink:'#f2f5f8'} : {})
   };
   for (const [key,value] of Object.entries(overrides)) {
@@ -63,20 +64,42 @@ function readStyle(text, destination) {
   return next;
 }
 
-function installedSettings(options) {
+// Only explicit design choices travel. Each preset keeps its own geometry.
+function sharedName(key){
+  return key.replace(/^spiralRim/,'borderColor').replace(/^spiralRadius$/,'radius');
+}
+function sharedFields(options,type){
+  const fields=new Map();
+  for(const group of controlGroups(options,type)){
+    if(!['Elements','Image','Title','Description','Card','Control styling','Theme'].includes(group.title))continue;
+    for(const field of group.fields){
+      if(field.key!=='cardWidth')fields.set(sharedName(field.key),field);
+    }
+    if(group.typography)fields.set(group.typography,{key:group.typography});
+  }
+  for(const key of ['titlePalette','descriptionCustom'])fields.set(key,{key});
+  return fields;
+}
+function rememberStyle(record,options){
+  const base=settings(options.preset,{},record.source.type);
+  for(const [name,field] of sharedFields(options,record.source.type)){
+    if(options[field.key]!==base[field.key])record.shared.set(name,options[field.key]);
+  }
+}
+function installedSettings(options,sourceType) {
   // Earlier v1 snippets used the layout palette and typography, including
   // when the author kept every default and exported just a preset ID.
   return settings(options.preset, {
     ...options,
     colorSource: options.colorSource === 'section' ? 'section' : 'custom',
     typeSource: options.typeSource === 'native' ? 'native' : 'preset',
-  });
+  },sourceType);
 }
 
 function pageCode(source, options) {
-  const base = settings(options.preset);
+  const base = settings(options.preset,{},source.type);
   const opts = {preset:options.preset, colorSource:options.colorSource, typeSource:options.typeSource};
-  if(options.preset==='spiral')for(const key of ['mobileSizing','titleCustom','bodyCustom','overlayEnabled','cardBorderEnabled'])opts[key]=options[key];
+  for(const key of ['mobileSizing','titleCustom','bodyCustom','overlayEnabled','cardBorderEnabled'])opts[key]=options[key];
   if (usesMinimumHeight(options.preset)) opts.stageHeight = options.stageHeight;
   for (const key of Object.keys(base)) {
     if (options.colorSource === 'section' && customColors.has(key)) continue;
@@ -93,7 +116,7 @@ export function startInline() {
   const snippets = document.querySelectorAll('script[type="application/json"][data-gallery-layout]');
   if (!author && !snippets.length) return null;
   const sources = discoverSources();
-  const records = new Map(sources.map(source => [source.root,{source,installed:null,options:null,mounted:null,presets:new Map()}]));
+  const records = new Map(sources.map(source => [source.root,{source,installed:null,options:null,mounted:null,presets:new Map(),shared:new Map()}]));
   let panel=null, editing=null, css=null, saving=false;
   const cleanups=[];
   function apply(record, options) {
@@ -111,8 +134,8 @@ export function startInline() {
   }
   function restore(record) {
     close();
-    record.presets.clear();
-    if (record.installed) apply(record,record.installed);
+    record.presets.clear();record.shared.clear();
+    if (record.installed){apply(record,record.installed);rememberStyle(record,record.installed);}
     else {record.mounted?.destroy();record.mounted=null;record.options=null;}
   }
   function open(record) {
@@ -128,7 +151,7 @@ export function startInline() {
     }
     record.button.querySelector('span').textContent='Configure layout';
     record.button.setAttribute('aria-label','Configure '+source.name+' layout');
-    let initial = record.options || record.installed || settings('arc-tabs',source.type!=='list'?{galleryWidth:'source'}:{});
+    let initial = record.options || record.installed || settings('arc-tabs',source.type!=='list'?{galleryWidth:'source'}:{},source.type);
     if(source.type!=='list' && initial.preset==='stack'){
       initial=settings('arc-tabs',{galleryWidth:'source'});
       apply(record,initial);
@@ -144,12 +167,20 @@ export function startInline() {
       onPreset:id=>{
         if (!layouts.has(id)||(source.type!=='list'&&id==='stack')) return;
         record.presets.set(record.options.preset,{...record.options});
-        change({...(record.presets.get(id)||settings(id)),galleryWidth:record.options.galleryWidth,galleryHeight:record.options.galleryHeight});
+        const next={...(record.presets.get(id)||settings(id,{},source.type)),galleryWidth:record.options.galleryWidth,galleryHeight:record.options.galleryHeight};
+        const supported=sharedFields(next,source.type);
+        for(const [key,value] of record.shared){
+          const field=supported.get(key);
+          if(field && (!field.choices || field.choices.some(c=>c.value===value)))next[field.key]=value;
+        }
+        change(next);
         panel.update({source,options:{...record.options}});
       },
       onOption:(key,value)=>{
         if (!Object.hasOwn(record.options,key) || key==='preset') return;
         const next={...record.options,[key]:value};
+        const common=sharedName(key);
+        if(sharedFields(record.options,source.type).has(common))record.shared.set(common,value);
         change(next);
       },
       getSaveState:()=>{
@@ -169,7 +200,7 @@ export function startInline() {
             record.installed=null;
             if(editing===record)restore(record);
             else {
-              record.presets.clear();
+              record.presets.clear();record.shared.clear();
               record.mounted?.destroy();
               record.mounted=null;
               record.options=null;
@@ -182,6 +213,7 @@ export function startInline() {
         const next=readStyle(text,record.options);
         if (!next || (source.type!=='list'&&next.preset==='stack')) return false;
         record.presets.set(record.options.preset,{...record.options});
+        record.shared.clear();rememberStyle(record,next);
         change(next);
         panel.update({source,options:record.options});
         return true;
@@ -197,7 +229,7 @@ export function startInline() {
       const data=JSON.parse(script.textContent),matches=document.querySelectorAll(data.selector);
       const record=matches.length===1&&records.get(matches[0]);
       if(!record || data.v!==1 || data.type!==record.source.type || !layouts.has(data.options?.preset)) continue;
-      record.installed=installedSettings(data.options);
+      record.installed=installedSettings(data.options,data.type);rememberStyle(record,record.installed);
     } catch { console.warn('Gallery Studio: skipped an invalid page layout.'); }
   }
   for(const record of records.values()) if(record.installed) apply(record,record.installed);

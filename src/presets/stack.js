@@ -54,6 +54,11 @@ export function mountStack({host, items, options, makeCard, onChange, nativeList
 
   function measure() {
     // Read untransformed sizes together, after wrapping, image or type changes.
+    if(options.cardSizing==='equal' && cards.length){
+      for(const {card} of cards)card.style.minHeight=visible+'px';
+      const tallest=Math.max(...cards.map(({card})=>card.offsetHeight));
+      for(const {card} of cards)card.style.minHeight=tallest+'px';
+    }
     const sizes = cards.map(({card, wrap}) => ({height: card.offsetHeight, rowHeight: wrap.offsetHeight}));
     const viewport = pageScroll ? window.innerHeight : host.clientHeight;
     let offset = track.clientTop + (parseFloat(getComputedStyle(track).paddingTop) || 0);

@@ -1,4 +1,4 @@
-// Only Spiral opts into these controls. Saved settings keep their existing keys.
+// Shared card controls retain the original saved keys. Geometry belongs to each renderer.
 export const spiralDesignDefaults = {
   mobileSizing:false, carouselPadding:0, surfaceEnabled:false, surfaceColor:'#ffffff', surfaceRadius:0,
   heightMode:'pixels', viewportHeight:65, mobileHeightMode:'inherit', mobileViewportHeight:65,
@@ -20,6 +20,11 @@ export function spiralDesignGroups(options,source,{range,select,swatch},existing
  const when=(key,value,fields)=>fields.map(field=>({...field,when:[key,value]}));
  const group=(title,...fields)=>({title,fields:fields.flat()});
  const original=key=>existing.flatMap(g=>g.fields).find(f=>f.key===key);
+ const spiral=options.preset==='spiral';
+ const stack=options.preset==='stack';
+ const spatial=['wall','ring','angled'].includes(options.preset);
+ const overlayLayout=spatial || options.preset==='timed';
+ const spacing=spiral?'spiralGap':'gap';
  const list=source!=='gallery';
  const weight={inherit:'Inherit',...Object.fromEntries(Array.from({length:9},(_,i)=>[100*(i+1),String(100*(i+1))]))};
  const alignment={inherit:'Inherit',left:'Left',center:'Center',right:'Right'};
@@ -30,7 +35,7 @@ export function spiralDesignGroups(options,source,{range,select,swatch},existing
    return [check(toggle,label),...when(toggle,true,[number(prefix+'Angle','Angle',0,360,'°'),number(prefix+'Distance','Distance',0,48),number(prefix+'Blur','Blur',0,40),number(prefix+'Spread','Spread',0,16),swatch(color,'Color')])];
  }
  const mobile=(key,base)=>({...original(base),key, label:'Mobile '+original(base).label.toLowerCase(),inherits:base});
- return [
+ const groups = [
  group('Elements',check('showImage','Show image'),check('showTitles','Show title'),...(list?[check('showDescription','Show description'),check('showButton','Show button')]:[]),check('showControls','Show controls')),
  group('Main carousel',...(list?[select('heightMode','Height',{auto:'Auto',pixels:'Pixels',viewport:'Viewport'}),...when('heightMode','pixels',[number('stageHeight','Height',120,1600)]),...when('heightMode','viewport',[number('viewportHeight','Window height',15,100,'%')])]:[]),
  number('carouselPadding','Carousel padding',0,64),original('spiralWidth'),check('surfaceEnabled','Background'),...when('surfaceEnabled',true,[swatch('surfaceColor','Color'),number('surfaceRadius','Corner radius',0,64)]),
@@ -39,18 +44,46 @@ export function spiralDesignGroups(options,source,{range,select,swatch},existing
  {...number('cardsPerMinute','Cards per minute',1,60,'',.5),when:['autoplay',true],condition:o=>o.playbackMode==='continuous'},
  {...number('duration','Time per card',1,15,'s',.5),when:['autoplay',true],condition:o=>o.playbackMode==='step'}),
  group('Spiral',original('spiralRiseUnit'),{...original('spiralRise'),label:'Rise'},select('textPlacement','Text placement',{below:'Below the spiral',card:'On each card'}),original('showSlots')),
- group('Image',select('aspectRatio','Image crop',Object.fromEntries(['original','1:1','3:2','2:3','4:3','3:4','16:9','2.4:1','circle','4:5','9:16'].map(k=>[k,k==='original'?'Original':k==='circle'?'Circle':k]))),select('fit','Image sizing',{cover:'Fill',contain:'Fit'}),number('imageWidth','Image width',20,100,'%'),select('imageAlign','Alignment',{left:'Left',center:'Center',right:'Right'}),original('imagePadding'),
+ group('Image',select('aspectRatio','Image crop',Object.fromEntries(['original','1:1','3:2','2:3','4:3','3:4','16:9','2.4:1','circle','4:5','9:16'].map(k=>[k,k==='original'?'Original':k==='circle'?'Circle':k]))),select('fit','Image sizing',{cover:'Fill',contain:'Fit'}),number('imageWidth','Image width',20,100,'%'),select('imageAlign','Alignment',{left:'Left',center:'Center',right:'Right'}),number('imagePadding','Image padding',0,20,'%'),
  check('imageBorder','Image border'),...when('imageBorder',true,[swatch('imageBorderColor','Color'),number('imageBorderSize','Thickness',0,12),number('imageRadius','Corner radius',0,64)]),
  shadow('shadowEnabled','Image shadow','shadow','shadowColor'),check('overlayEnabled','Overlay'),...when('overlayEnabled',true,[swatch('imageTint','Color')])),
  typeGroup('Title','titleCustom','titleSize','titleWeight','titleColor','titleAlign'),
  ...(list?[typeGroup('Description','bodyCustom','descriptionSize','descriptionWeight','descriptionColor','descriptionAlign')]:[]),
  group('Card',original('cardWidth'),select('cardSizing','Height',{content:'Fit to content',equal:'Equal height'}),select('cardOrder','Element order',{media:'Media first',content:'Content first'}),number('cardPadding','Card padding',0,80),number('mediaGap','Space between image and text',0,80),number('titleGap','Space below title',0,80),...(list?[number('buttonGap','Space above button',0,80)]:[]),select('cardAlign','Vertical alignment',{middle:'Middle',top:'Top',bottom:'Bottom'}),
- check('cardBackground','Background'),...when('cardBackground',true,[swatch('cardColor','Color')]),check('cardBorderEnabled','Card border'),...when('cardBorderEnabled',true,[swatch('spiralRim','Color'),original('borderWidth')]),original('spiralRadius'),
+ check('cardBackground','Background'),...when('cardBackground',true,[swatch('cardColor','Color')]),check('cardBorderEnabled','Card border'),...when('cardBorderEnabled',true,[swatch(spiral?'spiralRim':'borderColor','Color'),original('borderWidth')]),original(spiral?'spiralRadius':'radius'),
  shadow('cardShadow','Card shadow','cardShadow','cardShadowColor'),original('backFace'),original('backColor'),...when('backFace','mirror',[check('mirrorOverlay','Mirrored image overlay')]),{...swatch('mirrorColor','Color'),when:['mirrorOverlay',true],condition:o=>o.backFace==='mirror'}),
- group('Interaction',check('pauseOnHover','Pause on hover'),original('hoverEffect'),original('hoverAmount'),number('hoverDuration','Hover duration',0,1000,'ms',10),select('clickAction','Card click',{source:list?'Button only':'Image link only',link:list?'Follow button link':'Follow image link',preview:source==='summary'?'Open blog post':'Open preview',none:'Do nothing'}),original('reducedMotion')),
+ group('Interaction',check('pauseOnHover','Pause on hover'),original('hoverEffect'),original('hoverAmount'),number('hoverDuration','Hover duration',0,1000,'ms',10),select('clickAction','Card click',{source:source==='summary'?'Post button only':list?'Button only':'Image link only',link:source==='summary'?'Follow post link':list?'Follow button link':'Follow image link',preview:source==='summary'?'Open blog post':'Open preview',none:'Do nothing'}),original('reducedMotion')),
  group('Control styling',original('controlSize'),number('controlIconSize','Icon size',0,60),number('controlPadding','Button padding',0,32),original('controlShape'),original('arrowStyle'),check('controlBackground','Button background'),original('controlPalette'),original('controlInk'),original('controlFill')),
- group('Mobile',check('mobileSizing','Customize mobile sizing'),mobile('mobileCardWidth','cardWidth'),mobile('mobileGap','spiralGap'),{...number('mobileCardPadding','Mobile card padding',0,80),inherits:'cardPadding'},{...number('mobileCarouselPadding','Mobile carousel padding',0,64),inherits:'carouselPadding'},mobile('mobileSpiralWidth','spiralWidth'),...(list?[select('mobileHeightMode','Mobile height',{inherit:'Use main height',auto:'Auto',pixels:'Pixels',viewport:'Viewport'}),{...number('mobileStageHeight','Mobile height',120,1600),inherits:'stageHeight',when:['mobileHeightMode','pixels']},{...number('mobileViewportHeight','Window height',15,100,'%'),when:['mobileHeightMode','viewport']}]:[])),
+ group('Mobile',check('mobileSizing','Customize mobile sizing'),mobile('mobileCardWidth','cardWidth'),mobile('mobileGap',spacing),{...number('mobileCardPadding','Mobile card padding',0,80),inherits:'cardPadding'},{...number('mobileCarouselPadding','Mobile carousel padding',0,64),inherits:'carouselPadding'},...(spiral?[mobile('mobileSpiralWidth','spiralWidth')]:[]),...(list?[select('mobileHeightMode','Mobile height',{inherit:'Use main height',auto:'Auto',pixels:'Pixels',viewport:'Viewport'}),{...number('mobileStageHeight','Mobile height',120,1600),inherits:'stageHeight',when:['mobileHeightMode','pixels']},{...number('mobileViewportHeight','Window height',15,100,'%'),when:['mobileHeightMode','viewport']}]:[])),
  group('Theme',select('colorSource','Colors',{section:'Section theme',custom:'Custom'}),...when('colorSource','custom',[swatch('background','Background'),swatch('ink','Text'),swatch('accent','Accent')]),select('typeSource','Typography',{native:'Site typography',preset:'Layout default'})),
  existing.find(g=>g.title==='Popup')
  ];
+ if(spiral)return groups;
+ if(source==='summary')groups.find(g=>g.title==='Popup').fields=[];
+ const main=groups.find(g=>g.title==='Main carousel');
+ const heightField=original('stageHeight');
+ main.fields=[original('galleryWidth'),original('galleryHeight'),
+   ...(heightField?[select('heightMode',heightField.label,{auto:'Auto',pixels:'Pixels',viewport:'Viewport'}),
+     {...heightField,when:['heightMode','pixels']},{...number('viewportHeight','Window height',15,100,'%'),when:['heightMode','viewport']}]:[]),
+   ...main.fields.filter(f=>['carouselPadding','surfaceEnabled','surfaceColor','surfaceRadius'].includes(f?.key)),
+   original('gap'),original('edgeMode'),original('edgeFade'),original('autoplay'),original('duration')];
+ for(const key of ['aspectRatio','cardOrder','cardAlign']){
+   const field=groups.flatMap(g=>g?.fields||[]).find(f=>f?.key===key);
+   field.choices.unshift({value:'layout',label:'Layout default'});
+ }
+ const specific=groups.find(g=>g.title==='Spiral');
+ specific.title='Layout';specific.fields=[original('depth'),original('navigation')];
+ const skip=new Set();
+ if(options.preset!=='ring')for(const key of ['backFace','backColor','mirrorOverlay','mirrorColor'])skip.add(key);
+ if(stack)for(const key of ['showControls','pauseOnHover'])skip.add(key);
+ if(overlayLayout)for(const key of ['cardOrder','cardSizing','mediaGap'])skip.add(key);
+ if(spatial)skip.add('cardAlign');
+ const mobileGroup=groups.find(g=>g.title==='Mobile');
+ mobileGroup.fields=mobileGroup.fields.filter(f=>!['mobileHeightMode','mobileViewportHeight','mobileStageHeight'].includes(f.key));
+ if(heightField)mobileGroup.fields.push(select('mobileHeightMode','Mobile height',{inherit:'Use main height',auto:'Auto',pixels:'Pixels',viewport:'Viewport'}),
+   {...heightField,key:'mobileStageHeight',label:'Mobile height',inherits:'stageHeight',when:['mobileHeightMode','pixels']},
+   {...number('mobileViewportHeight','Window height',15,100,'%'),when:['mobileHeightMode','viewport']});
+ for(const g of groups)g.fields=g.fields.filter(f=>f?.key&&!skip.has(f.key));
+ return groups.filter(g=>g.fields.length&&!(stack&&g.title==='Control styling'));
+
 }

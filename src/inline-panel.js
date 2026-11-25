@@ -148,7 +148,7 @@ export function controlGroups(options, sourceType) {
     ]},
     ...(enhanced?cardDesignGroups({range,select,swatch}):[]),
   ];
-  if(preset==='spiral'){
+  if(enhanced){
     sections=spiralDesignGroups(options,sourceType,{range,select,swatch},sections);
     for(const group of sections){
       if(group.title==='Mobile')for(const f of group.fields.slice(1)){
@@ -438,22 +438,22 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     }
     const paintKey=key.replace(/Swatch$|Opacity$/,'');
     const role=paintKey==='titleColor'?'titlePalette':paintKey==='descriptionColor'?'descriptionCustom':null;
-    if(current.preset==='spiral'&&role){const custom=role==='titlePalette'?'custom':true;current[role]=custom;onOption(role,custom);}
+    if(role){const custom=role==='titlePalette'?'custom':true;current[role]=custom;onOption(role,custom);}
     if (key === 'galleryHeight') {
       buildGroups();
-      fields.get(key).input.focus({preventScroll:true});
+      fields.get(key)?.input.focus({preventScroll:true});
     }
     if (key === 'colorSource') fields.forEach(syncField);
     else syncField(fields.get(key));
     for (const field of fields.values()) if (field.definition.inherits === key || field.definition.when?.[0] === key || field.definition.customFor===key) syncField(field);
-    if(current.preset==='spiral'){fields.forEach(syncField);syncGroups();}
+    fields.forEach(syncField);syncGroups();
     refreshCode();
   }
 
   function makeField(definition) {
     const { key, label, type } = definition;
     const row = node(definition.inherits || type==='palette' ? 'div' : 'label', `field field-${type}`);
-    if(current.preset==='spiral'&&definition.when)row.setAttribute('data-subsetting','');
+    if(definition.when)row.setAttribute('data-subsetting','');
     const name = node('span', 'field-label', label);
     if(type==='palette'){
       const input=node('div','palette-chips');
@@ -521,12 +521,12 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
       details.open = openGroups.get(group.title) ?? ['Elements','Size & spacing'].includes(group.title);
       const summary = node('summary', '', group.title);
       const body = node('div', 'group-body');
-      const visibleKey=current.preset==='spiral'?{Image:'showImage',Title:'showTitles',Description:'showDescription','Control styling':'showControls'}[group.title]:null;
+      const visibleKey={Image:'showImage',Title:'showTitles',Description:'showDescription','Control styling':'showControls'}[group.title];
       if(visibleKey)visibility.set(details,visibleKey);
       let picker;
       for (const definition of group.fields){
         const field=makeField(definition);
-        if(current.preset==='spiral' && definition.type==='palette'){
+        if(definition.type==='palette'){
           const key=definition.key.slice(0,-6);
           const row=node('div','paint-row'),trigger=button('paint-trigger','',definition.label.replace(/ palette$/,''));
           const label=node('span','field-label',definition.label.replace(/ palette$/,''));
