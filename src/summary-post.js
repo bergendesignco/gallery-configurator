@@ -221,7 +221,10 @@ export function createPostDialog(item, options, closeDialog) {
 
   function render(post) {
     projectUrl = webUrl(post.url, projectUrl) || projectUrl;
-    setIdentity(post.title || item.title, projectUrl);
+    // Squarespace's JSON may preserve HTML character references in the title.
+    const name = post.title?.replace(/&(?:#(?:[0-9]+|x[0-9a-f]+)|[a-z][a-z0-9]+);/gi,
+      reference => parse(reference).textContent);
+    setIdentity(name || item.title, projectUrl);
     content.replaceChildren();
     if (options.popupDescription !== false) {
       for (const block of post.blocks ?? []) {
