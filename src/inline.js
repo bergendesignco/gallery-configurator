@@ -20,6 +20,7 @@ function settings(preset, overrides = {}) {
       if (Number.isFinite(value) && value >= 0) base[key] = value;
     } else if (key !== 'preset' && Object.hasOwn(base,key) && typeof value === typeof base[key]) base[key] = value;
   }
+  if(base.popupDesktopLayout!=='drawer')base.popupDesktopLayout='split';
   if(preset==='spiral'){
     if(!('mobileSizing' in overrides))base.mobileSizing=base.mobileGap!=null||base.mobileCardWidth!=null;
     if(!('titleCustom' in overrides))base.titleCustom=Boolean(base.titleSize||base.titlePalette==='custom'||base.titleWeight!=='inherit');
@@ -32,7 +33,7 @@ function settings(preset, overrides = {}) {
 
 // A style contains only transferable controls. Content, destinations and
 // section-specific color/type choices always come from the receiving source.
-const localStyleKeys = new Set([...customColors, 'colorSource', 'typeSource', 'clickAction']);
+const localStyleKeys = new Set([...customColors, 'colorSource', 'typeSource', 'clickAction', 'popupDesktopLayout']);
 function transferableFields(options) {
   return controlGroups(options).flatMap(group => group.typography ? [...group.fields,{key:group.typography,type:'checkbox'}] : group.fields).filter(field => !localStyleKeys.has(field.key));
 }

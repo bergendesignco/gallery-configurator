@@ -157,6 +157,14 @@ export function controlGroups(options, sourceType) {
       }
     }
   }
+  if(sourceType==='summary'){
+    const desktopLayout = {...select('popupDesktopLayout','Desktop layout',{
+      split:'Split panel', drawer:'Slide-in drawer'
+    }),when:['clickAction','preview']};
+    const popup = sections.find(group=>group.title==='Popup');
+    if(popup) popup.fields.unshift(desktopLayout);
+    else sections.push({title:'Popup',fields:[desktopLayout]});
+  }
   if(enhanced) for(const section of sections){
     section.fields=section.fields.flatMap(field=>{
       if(field.type!=='color'||!designColors.includes(field.key))return [field];

@@ -59,7 +59,7 @@ async function readSeo(url, signal) {
 }
 
 // Returns plain data. HTML fields are source material for a future renderer.
-export async function loadPostData(postUrl, {signal} = {}) {
+export async function loadPostData(postUrl, {signal, includeSeo = true} = {}) {
   if (!postUrl) throw new Error('A linked post URL is required.');
   const url = new URL(postUrl, location.href);
   if (url.origin !== location.origin) throw new Error('The linked post must be on this site.');
@@ -74,7 +74,7 @@ export async function loadPostData(postUrl, {signal} = {}) {
   const base = absolute(item.fullUrl, response.url) || url.href;
   let pageSeo = null;
   try {
-    pageSeo = await readSeo(url, signal);
+    if (includeSeo) pageSeo = await readSeo(url, signal);
   } catch (error) {
     if (signal?.aborted) throw error;
   }

@@ -1,6 +1,6 @@
 import {loadPostData} from "./post-data.js";
 import {cardDesignDefaults,resolveDesignColors} from './card-design.js';
-import {loadPost} from './summary-post.js';
+import {createPostDialog} from './summary-post.js';
 import {mountCarousel} from './presets/carousels.js';
 import {mountSpatial} from './presets/spatial.js';
 import {mountStack} from './presets/stack.js';
@@ -13,6 +13,7 @@ import {fitViewport} from './viewport-footprint.js';
 import {appearanceDefaults,styleAppearance} from './appearance.js';
 import {applyGalleryTheme,attachGalleryDialog} from './section-theme.js';
 import baseCSS from './runtime.css';
+import postPopupCSS from './summary-post.css';
 import sectionThemeCSS from './section-theme.css';
 import nativeTypeCSS from './native-type.css';
 import carouselCSS from './presets/carousels.css';
@@ -33,7 +34,7 @@ export const presets=[
 {id:'spiral',name:'Spiral carousel',category:'Rotate',hint:'Drag to rotate · Click the active image to open',width:280},
 {id:'ring',name:'Interactive ring',category:'Hover',hint:'Move over the images · Drag to rotate',width:150},
 {id:'angled',name:'Angled gallery',category:'Perspective',hint:'Drag to explore · Hover to bring an image forward',width:240}];
-export const defaults={...cardDesignDefaults,...appearanceDefaults,colorSource:'custom',typeSource:'preset',preset:'arc-tabs',galleryWidth:'full',galleryHeight:'source',navigation:'auto',showControls:true,cardWidth:360,gap:28,mobileCardWidth:null,mobileGap:null,radius:16,depth:48,stageHeight:0,duration:5,autoplay:false,showTitles:true,fit:'cover',clickAction:'preview',background:'#edf0f4',ink:'#1b2838',accent:'#345bf2',reducedMotion:false};
+export const defaults={...cardDesignDefaults,...appearanceDefaults,popupDesktopLayout:'split',colorSource:'custom',typeSource:'preset',preset:'arc-tabs',galleryWidth:'full',galleryHeight:'source',navigation:'auto',showControls:true,cardWidth:360,gap:28,mobileCardWidth:null,mobileGap:null,radius:16,depth:48,stageHeight:0,duration:5,autoplay:false,showTitles:true,fit:'cover',clickAction:'preview',background:'#edf0f4',ink:'#1b2838',accent:'#345bf2',reducedMotion:false};
 export function usesMinimumHeight(preset) {
  return ['infinite','arc','arc-tabs','showcase','timed'].includes(preset);
 }
@@ -57,7 +58,7 @@ export function installStyles(preset) {
  if (!common) {
   common = document.createElement('style');
   common.id = 'gc-runtime-css';
-  common.textContent = [baseCSS,sectionThemeCSS,nativeTypeCSS].join('\n');
+  common.textContent = [baseCSS,sectionThemeCSS,nativeTypeCSS,postPopupCSS].join('\n');
   document.head.append(common);
  }
  const family = styleFamily(preset);
@@ -88,24 +89,33 @@ export function installStyles(preset) {
 }
 function textHTML(html){const t=document.createElement('template');t.innerHTML=html||'';return t.content.textContent||'';}
 export function mountGallery(host,items,initial={},nativeList=null){
- let options=mergeOptions(defaults,initial);let engine=null;let dialog=null;let restoreFocus=null;let active=0;let loadFrame=0;
+ let options=mergeOptions(defaults,initial);let engine=null;let dialog=null;let postPopup=null;let restoreFocus=null;let active=0;let loadFrame=0;
  let currentFamily,releaseStyles;
  host.classList.add('gc-stage');host.setAttribute('role','region');host.setAttribute('aria-label','Gallery preview');
- function closeDialog(){if(!dialog)return;dialog.close();dialog.remove();dialog=null;engine?.setSuspended?.(false);restoreFocus?.focus({preventScroll:true});}
+ function closeDialog(){if(!dialog)return;postPopup?.destroy();postPopup=null;dialog.close();dialog.remove();dialog=null;engine?.setSuspended?.(false);restoreFocus?.focus({preventScroll:true});}
  function open(item,index){
   if(options.clickAction==='none')return;
   if(options.clickAction==='link'){const href=safeLink(item.link);if(href)window.open(href,'_blank','noopener,noreferrer');return;}
-  restoreFocus=document.activeElement;if(dialog)closeDialog();
+  const opener=document.activeElement;if(dialog)closeDialog();restoreFocus=opener;
+  if(item.postUrl){
+   postPopup=createPostDialog(item,renderOptions(),closeDialog);
+   dialog=postPopup.dialog;
+   showDialog();
+   postPopup.load();
+   return;
+  }
   dialog=document.createElement('dialog');dialog.className='gc-dialog'+(options.preset==='showcase'?' gc-dialog-drawer':'');dialog.setAttribute('aria-label',item.title||'Image preview');
   const close=document.createElement('button');close.className='gc-dialog-close';close.type='button';close.textContent='Close ×';close.addEventListener('click',closeDialog);
   const content=document.createElement('div');content.className='gc-dialog-content';const media=document.createElement('div');media.className='gc-dialog-media';if(item.src && options.popupImage!==false){media.append(createImage(item));content.append(media);}
   const body=document.createElement('div');body.className='gc-dialog-copy';
   if(item.title && options.popupTitle!==false){const h=document.createElement('h2');h.textContent=item.title;body.append(h);}
-  if(item.postUrl && options.popupDescription!==false){
-   const article=document.createElement('article');body.append(article);loadPost(article,item);
-  }else if(item.description && options.popupDescription!==false){const p=document.createElement('div');p.innerHTML=cleanHTML(item.description);body.append(p);}
+  if(item.description && options.popupDescription!==false){const p=document.createElement('div');p.innerHTML=cleanHTML(item.description);body.append(p);}
   if(item.link && options.popupButton!==false){const a=document.createElement('a');a.href=safeLink(item.link);a.textContent=item.buttonLabel||'Open link';a.target='_blank';a.rel='noopener noreferrer';body.append(a);}
-  const count=document.createElement('p');count.className='gc-dialog-count';count.textContent=`${index+1} / ${items.length}`;body.append(count);content.append(body);dialog.append(close,content);attachGalleryDialog(host,dialog);dialog.showModal();engine?.setSuspended?.(true);loadNativeImage(media.querySelector('img'));close.focus();
+  const count=document.createElement('p');count.className='gc-dialog-count';count.textContent=`${index+1} / ${items.length}`;body.append(count);content.append(body);dialog.append(close,content);
+  showDialog();loadNativeImage(media.querySelector('img'));close.focus();
+ }
+ function showDialog(){
+  attachGalleryDialog(host,dialog);dialog.showModal();engine?.setSuspended?.(true);
   dialog.addEventListener('cancel',e=>{e.preventDefault();closeDialog();});dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDialog();}});
  }
  function makeCard(item,index,settings={}){

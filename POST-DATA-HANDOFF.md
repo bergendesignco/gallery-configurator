@@ -31,8 +31,14 @@ console.table(post.blocks.map(block => ({
 
 ## Connecting a design
 
-Load on selection. The loader requests the same-site post with `?format=json`, then reads its published HTML head for SEO. A failed JSON request rejects the promise. Missing page SEO yields `seo.page === null`. Use the post URL as a fallback link. Pass `{signal: controller.signal}` as the second argument to cancel an outstanding request when the selection changes.
+Load on selection. The loader requests the same-site post with `?format=json`, then reads its published HTML head for SEO. A failed JSON request rejects the promise. Missing page SEO yields `seo.page === null`. Use the post URL as a fallback link. Pass `{signal: controller.signal}` as the second argument to cancel an outstanding request when the selection changes. Pass `includeSeo: false` in the same options object when only the post JSON is needed.
 
 Use the actual title, excerpt and metadata independently of their visibility on the carousel card. Omit empty fields. Keep category and tag arrays separate. Use the structured slides for a custom gallery and preserve their order. Post markup is source data: use a suitable renderer for supported blocks, handle HTML as untrusted, and offer the original post link for interactive embeds or unsupported blocks. Squarespace block scripts do not initialize just because the data has been fetched.
 
-The existing popup has its own rendering path. This API is the integration point for the new design.
+## Portfolio popups
+
+Set **Click action** to **Open blog post** for a Summary Block. In **Popup → Desktop layout**, choose **Split panel** (the default) or **Slide-in drawer**. Both choices use the full-screen gallery at viewport widths of 680 px or less.
+
+The popup renders supported text and image blocks, uses the excerpt if the post has no readable blocks, and displays ordered Gallery Block slides. It falls back to the featured image or Summary thumbnail when there are no gallery slides. Categories and tags have their own lists. The project button links to the original post so visitors can open the complete content.
+
+The popup uses the site's Bergen appearance when the page sets `data-bdco-review-theme` on its root. Otherwise it follows the browser color preference.
