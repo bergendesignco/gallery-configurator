@@ -34,7 +34,7 @@ function settings(preset, overrides = {}) {
 // section-specific color/type choices always come from the receiving source.
 const localStyleKeys = new Set([...customColors, 'colorSource', 'typeSource', 'clickAction']);
 function transferableFields(options) {
-  return controlGroups(options).flatMap(group => group.fields).filter(field => !localStyleKeys.has(field.key));
+  return controlGroups(options).flatMap(group => group.typography ? [...group.fields,{key:group.typography,type:'checkbox'}] : group.fields).filter(field => !localStyleKeys.has(field.key));
 }
 function copyStyle(options) {
   const values = Object.fromEntries(transferableFields(options).map(({key}) => [key, options[key]]));

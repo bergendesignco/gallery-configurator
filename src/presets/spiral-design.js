@@ -24,7 +24,7 @@ export function spiralDesignGroups(options,source,{range,select,swatch},existing
  const weight={inherit:'Inherit',...Object.fromEntries(Array.from({length:9},(_,i)=>[100*(i+1),String(100*(i+1))]))};
  const alignment={inherit:'Inherit',left:'Left',center:'Center',right:'Right'};
  function typeGroup(title,toggle,size,weightKey,color,align){
-   return {...group(title,number(size,'Size',0,4,'rem',.05),select(weightKey,'Weight',weight),swatch(color,'Color'),select(align,'Alignment',alignment)),switchKey:toggle};
+   return {...group(title,number(size,'Size',0,4,'rem',.05),select(weightKey,'Weight',weight),swatch(color,'Color'),select(align,'Alignment',alignment)),typography:toggle};
  }
  function shadow(toggle,label,prefix,color){
    return [check(toggle,label),...when(toggle,true,[number(prefix+'Angle','Angle',0,360,'°'),number(prefix+'Distance','Distance',0,48),number(prefix+'Blur','Blur',0,40),number(prefix+'Spread','Spread',0,16),swatch(color,'Color')])];

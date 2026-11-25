@@ -155,8 +155,6 @@ export function controlGroups(options, sourceType) {
         f.condition=o=>o.mobileSizing;
         f.mobileRange=!!f.inherits;
       }
-      if(group.switchKey)group.fields.unshift({key:group.switchKey,label:'Custom',type:'checkbox'});
-      if(group.switchKey)group.fields.slice(1).forEach(f=>f.when=[group.switchKey,true]);
     }
   }
   if(enhanced) for(const section of sections){
@@ -169,6 +167,7 @@ export function controlGroups(options, sourceType) {
         {...range(field.key+'Opacity',field.label+' opacity',0,100,1,'%'),when},
       ];
     });
+    if(section.typography)for(const field of section.fields)field.typography=section.typography;
   }
   return sections;
 }
@@ -411,6 +410,11 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
 
   function changeOption(key, value) {
     const previousUnit = current.spiralRiseUnit;
+    const typography=fields.get(key)?.definition.typography;
+    if(typography && !current[typography]){
+      current[typography]=true;
+      onOption(typography,true);
+    }
     current = { ...current, [key]: value };
     if (key === 'spiralRiseUnit' && previousUnit !== value) {
       const height = Math.max(1, current.stageHeight);
@@ -510,17 +514,9 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
       const summary = node('summary', '', group.title);
       const body = node('div', 'group-body');
       const visibleKey=current.preset==='spiral'?{Image:'showImage',Title:'showTitles',Description:'showDescription','Control styling':'showControls'}[group.title]:null;
-      if(visibleKey&&!group.switchKey)visibility.set(details,visibleKey);
-      if(group.switchKey){
-        const section=node('section','group');
-        const heading=node('div','type-heading',group.title);
-        heading.append(makeField(group.fields[0]));
-        if(visibleKey)visibility.set(section,visibleKey);
-        section.append(heading,body);groupArea.append(section);
-      }
+      if(visibleKey)visibility.set(details,visibleKey);
       let picker;
       for (const definition of group.fields){
-        if(definition.key===group.switchKey)continue;
         const field=makeField(definition);
         if(current.preset==='spiral' && definition.type==='palette'){
           const key=definition.key.slice(0,-6);
@@ -552,7 +548,6 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
           picker.append(field);if(!definition.customFor)picker=null;
         }else {picker=null;body.append(field);}
       }
-      if(group.switchKey)continue;
       details.append(summary, body);
       groupArea.append(details);
       groups.set(group.title, details);
