@@ -20,7 +20,7 @@ export function editorBlocks({activate, configure, installed}) {
     for (const root of document.querySelectorAll(selector)) {
       if (drafts.has(root.id) || installed(root)) {
         root.classList.add('gc-editor-bound');
-        if (drafts.has(root.id)) activate(root);
+        activate(root);
       } else root.classList.remove('gc-editor-bound');
     }
     const root = edit() && selected();

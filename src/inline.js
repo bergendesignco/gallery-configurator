@@ -106,6 +106,7 @@ function pageCode(source, options) {
     if (options.colorSource === 'section' && customColors.has(key)) continue;
     if (options[key] !== base[key]) opts[key] = options[key];
   }
+  if(source.editorBlockFit)opts.editorBlockFit=true;
   const data = {v:1, selector:source.selector, type:source.type, options:opts};
   return '<script type="application/json" data-gallery-layout>\n' +
     JSON.stringify(data,null,2).replaceAll('<','\\u003c') + '\n</script>';
@@ -137,7 +138,7 @@ export function startInline() {
   }
   function restore(record) {
     close();
-    if(!record.installed) blockEditor?.forget(record.source.root);
+    if(!record.installed){record.source.editorBlockFit=false;blockEditor?.forget(record.source.root);}
     record.presets.clear();record.shared.clear();
     if (record.installed){apply(record,record.installed);rememberStyle(record,record.installed);}
     else {record.mounted?.destroy();record.mounted=null;record.options=null;}
@@ -201,7 +202,7 @@ export function startInline() {
         try {
           await savePageHeader({snippet:pageCode(source,savedOptions),context,onBackup,remove});
           if(remove){
-            record.installed=null;
+            savedBlocks.delete(source.selector);source.editorBlockFit=false;record.installed=null;
             if(editing===record)restore(record);
             else {
               record.presets.clear();record.shared.clear();
@@ -229,11 +230,15 @@ export function startInline() {
   }
   // Resolve every saved target against this page. Multiple snippets on one
   // page are independent; ambiguous selectors never affect a second source.
+  const savedBlocks=new Map();
   for (const script of snippets) {
     try {
       const data=JSON.parse(script.textContent),matches=document.querySelectorAll(data.selector);
       const record=matches.length===1&&records.get(matches[0]);
-      if(!record || data.v!==1 || data.type!==record.source.type || !layouts.has(data.options?.preset)) continue;
+      if(data.v!==1 || !layouts.has(data.options?.preset)) continue;
+      if(data.type==='gallery'||data.type==='summary')savedBlocks.set(data.selector,data);
+      if(!record || data.type!==record.source.type) continue;
+      record.source.editorBlockFit=data.options.editorBlockFit===true;
       record.installed=installedSettings(data.options,data.type);rememberStyle(record,record.installed);
     } catch { console.warn('Gallery Studio: skipped an invalid page layout.'); }
   }
@@ -312,15 +317,25 @@ export function startInline() {
       const source = discoverSources().find(s=>s.root===root);
       if (!source) return null;
       const record={source,installed:null,options:null,mounted:null,presets:new Map(),shared:new Map()};
+      const saved=savedBlocks.get(source.selector);
+      if(saved && saved.type===source.type)record.installed=installedSettings(saved.options,source.type);
       records.set(root,record); attachButton(record); return record;
     }
     const previewed = new WeakSet();
     blockEditor=editorBlocks({
-      installed:root=>Boolean(records.get(root)?.installed && records.get(root).installed.galleryHeight!=='custom'),
+      installed(root){
+        const options=records.get(root)?.installed || savedBlocks.get('#'+CSS.escape(root.id))?.options;
+        return Boolean(options && options.galleryHeight!=='custom' && (records.get(root)?.source.editorBlockFit || savedBlocks.get('#'+CSS.escape(root.id))?.options.editorBlockFit));
+      },
       activate(root){
         const record=recordFor(root);
         if(!record) return;
-        if(!record.mounted && !apply(record,record.options||settings('arc-tabs',{galleryWidth:'source'},record.source.type)))return;
+        record.source.editorBlockFit=true;
+        if(!record.button?.isConnected)attachButton(record);
+        if(record.mounted && previewed.has(record.mounted) && root.classList.contains('gc-edit-preview') && !record.mounted.host.isConnected){
+          record.mounted.destroy();record.mounted=null;
+        }
+        if(!record.mounted && !apply(record,record.options||record.installed||settings('arc-tabs',{galleryWidth:'source'},record.source.type)))return;
         if(editingNativePage() && !previewed.has(record.mounted)){
           record.mounted.instance.setEditPreview(true); previewed.add(record.mounted); updateEye(true);
         }else if(!editingNativePage()) previewed.delete(record.mounted);

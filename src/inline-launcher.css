@@ -13,6 +13,14 @@ button.gc-edit-eye[hidden]{display:none!important}
 .gc-edit-eye[aria-pressed=true]{background:#2547b3}
 
 /* Release only the opted-in block's intrinsic content height while arranging it. */
-.sqs-edit-mode-active .gc-editor-bound {position:relative!important;height:100%!important;min-height:0!important}
-.sqs-edit-mode-active .gc-editor-bound>.sqs-block-content {position:absolute!important;inset:0;height:auto!important;min-height:0!important;overflow:hidden!important}
+/* Let the selected grid cell position the preview. Squarespace measures
+   the native contents wrapper to enforce the block's minimum row span. */
+.sqs-edit-mode-active [data-fluid-engine-block] .fluid-engine-block-contents:has(> .gc-editor-bound),
+.sqs-edit-mode-active [data-fluid-engine-block] .gc-editor-bound,
+.sqs-edit-mode-active [data-fluid-engine-block] .gc-editor-bound > .sqs-block-content {
+  display:contents!important;
+}
+.sqs-edit-mode-active [data-fluid-engine-block] .gc-editor-bound:not(.gc-edit-preview) > .sqs-block-content > :is(.summary-block-wrapper,.sqs-gallery-container,.sqs-gallery) {
+  position:absolute!important;inset:0;overflow:hidden;
+}
 .sqs-edit-mode-active [data-gc-author-panel].gc-editor-panel {display:block!important}
