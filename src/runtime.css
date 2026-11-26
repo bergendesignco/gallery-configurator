@@ -89,3 +89,11 @@
 
 .gc-stage.gc-hide-controls :is(.orbit-controls, .gc-carousel-controls, .gc-carousel-tabs, .gc-spatial-nav) { display: none !important; }
 .gc-dialog-copy article img { max-width: 100%; height: auto; }
+
+/* Closing or removing the last gallery modal releases the page automatically. */
+:root:has(dialog:is(.gc-post-dialog,.gc-dialog,.gc-spiral-dialog):modal),
+body:has(dialog:is(.gc-post-dialog,.gc-dialog,.gc-spiral-dialog):modal) {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+dialog:is(.gc-post-dialog,.gc-dialog,.gc-spiral-dialog) { overscroll-behavior: contain; }

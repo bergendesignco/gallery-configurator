@@ -1,5 +1,3 @@
-:root:has(.gc-post-dialog[open]) { overflow: hidden; }
-
 .gc-post-dialog {
   color-scheme: light dark;
   --post-surface: var(--bdco-home-paper, light-dark(#fff, #101817));

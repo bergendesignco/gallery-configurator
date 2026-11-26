@@ -1,3 +1,4 @@
+import {containScroll} from './scroll-boundary.js';
 import {spiralDesignGroups} from './presets/spiral-design.js';
 import {cardDesignGroups,cardDesignLayouts,designColors,themeSwatches} from './card-design.js';
 import { defaults, presets, spiralControls, spiralDefaults, usesMinimumHeight } from './runtime.js';
@@ -256,10 +257,7 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
   const groups = new Map();
   const element = node('div');
   element.setAttribute('data-gc-author-panel', '');
-  element.setAttribute('data-lenis-prevent','');
-  // Keep site-level smooth-scroll handlers out of the settings panel.
-  element.addEventListener('wheel',event=>event.stopPropagation(),{passive:true});
-  element.addEventListener('touchmove',event=>event.stopPropagation(),{passive:true});
+  containScroll(element);
   const shadow = element.attachShadow({ mode: 'open' });
   const style = node('style');
   style.textContent = panelCSS;

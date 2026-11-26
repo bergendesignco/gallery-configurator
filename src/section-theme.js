@@ -1,3 +1,4 @@
+import {containScroll} from './scroll-boundary.js';
 // Inline layouts inherit the active section's CSS variables. Keeping each native
 // dialog in that subtree also keeps its theme when the browser puts it in the top layer.
 export function applyGalleryTheme(host,options){
@@ -32,6 +33,7 @@ function markDialog(host,dialog){
 }
 
 export function attachGalleryDialog(host,dialog){
+ containScroll(dialog);
  const parent=host.classList.contains('gc-embed')?host:host.ownerDocument.body;
  markDialog(host,dialog);
  if(dialog.parentElement!==parent)parent.append(dialog);
