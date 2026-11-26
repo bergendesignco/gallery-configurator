@@ -69,14 +69,14 @@ function sourceSelector(root,type){
  const selector=type==='list'?'section[data-section-id="'+CSS.escape(value)+'"]':'#'+CSS.escape(value);
  return root.ownerDocument.querySelectorAll(selector).length===1?selector:'';
 }
-export function discoverSources(doc=document){
+export function discoverSources(doc=document, pendingRoot=null){
  const counts={list:0,gallery:0,summary:0};
  return Array.from(doc.querySelectorAll(Object.values(nativeRoots).join(',')))
   .filter(root=>!root.closest('.gc-embed'))
    .flatMap(root=>{
    const type=root.matches(nativeRoots.list)?'list':root.matches(nativeRoots.summary)?'summary':'gallery';
    const selector=sourceSelector(root,type);
-   if(!selector||!sourcePlacement(root,type))return [];
+   if(!selector||(root!==pendingRoot&&!sourcePlacement(root,type)))return [];
    const count=++counts[type],label=type==='list'?'List Section':type==='summary'?'Summary Block':'Gallery Block';
    return {name:label+(count>1?' '+count:''),type,selector,root,items:readSource(root,type)};
   });

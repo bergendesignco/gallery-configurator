@@ -126,7 +126,7 @@ export function startInline() {
   function apply(record, options) {
     if (record.mounted) record.mounted.instance.update({...options,previewScroll:false});
     else record.mounted=embed({selector:record.source.selector,type:record.source.type,options});
-    if (record.mounted) record.options={...options};
+    if (record.mounted || record.source.editorBlockFit) record.options={...options};
     return !!record.mounted;
   }
   function close(focus = true) {
@@ -148,7 +148,7 @@ export function startInline() {
     close(false);
     const {source}=record;
     if(!record.mounted) source.items=readSource(source.root,source.type);
-    if (!source.items.length) {
+    if (!source.items.length && !source.editorBlockFit) {
       const message='Add items in Squarespace, then try again';
       record.button.querySelector('span').textContent=message;
       record.button.setAttribute('aria-label',message);
@@ -161,7 +161,7 @@ export function startInline() {
       initial=settings('arc-tabs',{galleryWidth:'source'});
       apply(record,initial);
     }
-    if (!record.mounted && !apply(record,initial)) {
+    if (!record.mounted && !apply(record,initial) && !source.editorBlockFit) {
       record.button.textContent='No supported layout here';return;
     }
     editing=record;
@@ -314,7 +314,7 @@ export function startInline() {
         if(options) apply(previous,options);
         return previous;
       }
-      const source = discoverSources().find(s=>s.root===root);
+      const source = discoverSources(document,root).find(s=>s.root===root);
       if (!source) return null;
       const record={source,installed:null,options:null,mounted:null,presets:new Map(),shared:new Map()};
       const saved=savedBlocks.get(source.selector);
@@ -335,7 +335,12 @@ export function startInline() {
         if(record.mounted && previewed.has(record.mounted) && root.classList.contains('gc-edit-preview') && !record.mounted.host.isConnected){
           record.mounted.destroy();record.mounted=null;
         }
-        if(!record.mounted && !apply(record,record.options||record.installed||settings('arc-tabs',{galleryWidth:'source'},record.source.type)))return;
+        if(!record.mounted){
+          record.source.items=readSource(root,record.source.type);
+          if(!record.source.items.length)return;
+          if(!apply(record,record.options||record.installed||settings('arc-tabs',{galleryWidth:'source'},record.source.type)))return;
+          if(editing===record)panel?.update({source:record.source,options:record.options});
+        }
         if(editingNativePage() && !previewed.has(record.mounted)){
           record.mounted.instance.setEditPreview(true); previewed.add(record.mounted); updateEye(true);
         }else if(!editingNativePage()) previewed.delete(record.mounted);

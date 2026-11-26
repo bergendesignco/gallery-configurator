@@ -190,6 +190,7 @@ function describeSource(source) {
   const name = source.name?.trim() || type;
   const count = source.items?.length || 0;
   const target = name.toLowerCase().includes(type.toLowerCase()) ? name : `${name} · ${type}`;
+  if (!count && source.type==='summary') return target+' · Choose a collection in the block settings to preview its posts.';
   return `${target} · ${count} ${count === 1 ? 'item' : 'items'}`;
 }
 
