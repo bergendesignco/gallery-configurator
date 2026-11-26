@@ -67,3 +67,7 @@
 .gc-spiral-root .orbit-surface{transition-duration:var(--gc-hover-time)}
 .gc-spiral-root [data-composite=true]:not(.has-webgl-carousel) .orbit-surface{aspect-ratio:var(--gc-art-aspect,16/9)}
 .gc-stage .gc-spiral-root [data-custom-control-size=true] button.gc-transport{width:calc(var(--gc-icon-size) + 2 * var(--gc-button-padding));height:calc(var(--gc-icon-size) + 2 * var(--gc-button-padding));flex-basis:calc(var(--gc-icon-size) + 2 * var(--gc-button-padding))}
+
+/* Keep the fitted Spiral scrollable when necessary without drawing a scrollbar. */
+.gc-block-slot > .gc-block-fit:has(> .gc-spiral-root) { scrollbar-width: none; }
+.gc-block-slot > .gc-block-fit:has(> .gc-spiral-root)::-webkit-scrollbar { display: none; }
