@@ -12,11 +12,12 @@ button.gc-edit-eye[hidden]{display:none!important}
 .gc-edit-eye svg{width:20px;height:20px}
 .gc-edit-eye[aria-pressed=true]{background:#2547b3}
 
-/* Release only the opted-in block's intrinsic content height while arranging it. */
-/* Let the selected grid cell position the preview. Squarespace measures
-   the native contents wrapper to enforce the block's minimum row span. */
+/* The editor needs a real hit area up to each edge. Anchor its wrappers to
+   the grid cell while keeping the native grid out of intrinsic sizing. */
 .sqs-edit-mode-active [data-fluid-engine-block] .fluid-engine-block-contents:has(> .gc-editor-bound),
-.sqs-edit-mode-active [data-fluid-engine-block] .gc-editor-bound,
+.sqs-edit-mode-active [data-fluid-engine-block] .gc-editor-bound {
+  position:absolute!important;inset:0;height:auto!important;min-height:0!important;contain:size;
+}
 .sqs-edit-mode-active [data-fluid-engine-block] .gc-editor-bound > .sqs-block-content {
   display:contents!important;
 }
