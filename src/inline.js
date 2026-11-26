@@ -125,7 +125,7 @@ export function startInline() {
   const cleanups=[];
   function apply(record, options) {
     if (record.mounted) record.mounted.instance.update({...options,previewScroll:false});
-    else record.mounted=embed({selector:record.source.selector,type:record.source.type,options});
+    else record.mounted=embed({selector:record.source.selector,type:record.source.type,options,previewSamples:author});
     if (record.mounted || record.source.editorBlockFit) record.options={...options};
     return !!record.mounted;
   }
@@ -147,7 +147,7 @@ export function startInline() {
     if (editing === record) {close();return;}
     close(false);
     const {source}=record;
-    if(!record.mounted) source.items=readSource(source.root,source.type);
+    if(!record.mounted || source.type==='summary') source.items=readSource(source.root,source.type,location.href,author);
     if (!source.items.length && !source.editorBlockFit) {
       const message='Add items in Squarespace, then try again';
       record.button.querySelector('span').textContent=message;
@@ -335,8 +335,12 @@ export function startInline() {
         if(record.mounted && previewed.has(record.mounted) && root.classList.contains('gc-edit-preview') && !record.mounted.host.isConnected){
           record.mounted.destroy();record.mounted=null;
         }
+        if(record.mounted && record.source.items.some(item=>item.sample) &&
+            root.querySelector('.summary-block-wrapper .summary-title-link[href]:not([href=""]),.summary-block-wrapper .summary-thumbnail-container[href]:not([href=""])')){
+          record.mounted.destroy();record.mounted=null;
+        }
         if(!record.mounted){
-          record.source.items=readSource(root,record.source.type);
+          record.source.items=readSource(root,record.source.type,location.href,author);
           if(!record.source.items.length)return;
           if(!apply(record,record.options||record.installed||settings('arc-tabs',{galleryWidth:'source'},record.source.type)))return;
           if(editing===record)panel?.update({source:record.source,options:record.options});

@@ -309,7 +309,7 @@ export function listenForEditMode(listener){
  };
 }
 
-export function embed({selector,type='gallery',options={}}={}){
+export function embed({selector,type='gallery',options={},previewSamples=false}={}){
  let target=selector;
  if(typeof selector==='string'){
   try{
@@ -324,7 +324,7 @@ export function embed({selector,type='gallery',options={}}={}){
  const {source}=placement;
  const previous=inlineRegistry.mounts.get(source);
  if(previous){previous.instance.update(options);return previous;}
- if(!readSource(source,type).length)return null;
+ if(!readSource(source,type,location.href,previewSamples).length)return null;
  const host=document.createElement('div'),slot=document.createElement('div');
  host.dataset.sourceType=type;host.className='gc-embed';slot.className='gc-viewport-slot';slot.append(host);
  let current={...mergeOptions({...defaults,...layoutDesignDefaults(options.preset??defaults.preset,options),...(type==='summary'?{showButton:false}:{})},options),previewScroll:false};
@@ -376,7 +376,7 @@ export function embed({selector,type='gallery',options={}}={}){
  function mount(){
   if(destroyed||gallery||!source.isConnected)return;
   const live=sourcePlacement(source,type);
-  const items=readSource(source,type);
+  const items=readSource(source,type,location.href,previewSamples);
   if(!live||!items.length)return;
   live.originals[0].before(slot);
   installStyles();
