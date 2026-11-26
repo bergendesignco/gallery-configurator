@@ -57,12 +57,21 @@ function checkAuthorPage(code, markerInBody = false, editor = true, saved = fals
     globalThis.frameElement = ${editor} ? {id:'sqs-site-frame'} : null;
     globalThis.document = {
       readyState: 'complete',
+      head: {append(){}}, body: {append(){},classList:{contains(){return false}}},
+      documentElement:{classList:{contains(){return false}}},
+      createElement(){return {setAttribute(){},querySelector(){return {}},style:{}}},
       querySelector(selector) {
         if (${markerInBody} && selector.includes('head ')) return null;
         return selector.includes('data-gallery-configure') ? {} : null;
       },
       querySelectorAll(selector) { return ${saved} && selector.includes('data-gallery-layout') ? [{textContent:'{}'}] : []; }
-    };\n${code}\n
+    };
+    globalThis.parent={document};
+    globalThis.MutationObserver=class {observe(){}};
+    globalThis.requestAnimationFrame=()=>1;
+    globalThis.addEventListener=()=>{};
+    globalThis.location={pathname:'/test'};
+    ${code}\n
     if (Boolean(window.GalleryStudioInline) !== ${editor || saved} || window.SpiralCarousel) {
       throw Error('Author discovery must initialize independently of the spiral');
     }`;

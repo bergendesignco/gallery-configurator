@@ -2,6 +2,7 @@ import { pageSaveContext, savePageHeader } from './page-save.js';
 import { defaults, presets, spiralDefaults, usesMinimumHeight, editingNativePage, listenForEditMode, embed } from './runtime.js';
 import { discoverSources, readSource } from './sources.js';
 import { createPanel, controlGroups } from './inline-panel.js';
+import { editorBlocks } from './editor-blocks.js';
 import launcherCSS from './inline-launcher.css';
 
 import {layoutDesignDefaults} from './card-design.js';
@@ -111,13 +112,15 @@ function pageCode(source, options) {
 }
 
 export function startInline() {
-  if (window.GalleryStudioInline?.version === 1) return window.GalleryStudioInline;
-  const author = window.self !== window.top && window.frameElement?.id === 'sqs-site-frame' && !!document.querySelector('script[type="application/json"][data-gallery-configure]');
+  const previous = window.GalleryStudioInline;
+  if (previous?.editorBlocks) return previous;
+  if (previous) previous.destroy();
+  const author = window.self !== window.top && window.frameElement?.id === 'sqs-site-frame' && !!document.querySelector('script[type="application/json"][data-gallery-configure],script[type="application/json"][data-gallery-editor]');
   const snippets = document.querySelectorAll('script[type="application/json"][data-gallery-layout]');
   if (!author && !snippets.length) return null;
   const sources = discoverSources();
   const records = new Map(sources.map(source => [source.root,{source,installed:null,options:null,mounted:null,presets:new Map(),shared:new Map()}]));
-  let panel=null, editing=null, css=null, saving=false;
+  let panel=null, editing=null, css=null, saving=false, blockEditor=null;
   const cleanups=[];
   function apply(record, options) {
     if (record.mounted) record.mounted.instance.update({...options,previewScroll:false});
@@ -134,6 +137,7 @@ export function startInline() {
   }
   function restore(record) {
     close();
+    if(!record.installed) blockEditor?.forget(record.source.root);
     record.presets.clear();record.shared.clear();
     if (record.installed){apply(record,record.installed);rememberStyle(record,record.installed);}
     else {record.mounted?.destroy();record.mounted=null;record.options=null;}
@@ -206,6 +210,7 @@ export function startInline() {
               record.options=null;
             }
           }else record.installed=savedOptions;
+          blockEditor?.forget(source.root);
         } finally {saving=false;}
       },
       getStyle:()=>copyStyle(record.options),
@@ -233,7 +238,7 @@ export function startInline() {
     } catch { console.warn('Gallery Studio: skipped an invalid page layout.'); }
   }
   for(const record of records.values()) if(record.installed) apply(record,record.installed);
-  if(author && records.size) {
+  if(author) {
     css=document.createElement('style');css.textContent=launcherCSS;document.head.append(css);
     const eye=document.createElement('button');
     eye.type='button';
@@ -279,9 +284,9 @@ export function startInline() {
       updateEye();
     });
     cleanups.push(()=>{stopEye();eye.remove();});
-    for(const record of records.values()) {
+    function attachButton(record) {
       const {source}=record;
-      if (!source.selector) continue;
+      if (!source.selector) return;
       const anchor=source.root.querySelector(source.type==='list'?'.user-items-list':'.sqs-block-content')||source.root;
       const position=getComputedStyle(anchor).position==='static';
       if (position) anchor.classList.add('gc-config-position');
@@ -292,8 +297,43 @@ export function startInline() {
       button.addEventListener('click',()=>open(record));anchor.append(button);record.button=button;
       cleanups.push(()=>{button.remove();if(position) anchor.classList.remove('gc-config-position');});
     }
+    for (const record of records.values()) attachButton(record);
+    function recordFor(root) {
+      if (records.has(root)) return records.get(root);
+      const previous = [...records.values()].find(r => r.source.root.id === root.id && !r.source.root.isConnected);
+      if (previous) {
+        const options = previous.options;
+        previous.mounted?.destroy(); previous.mounted=null;
+        records.delete(previous.source.root); previous.source.root=root; records.set(root,previous);
+        attachButton(previous);
+        if(options) apply(previous,options);
+        return previous;
+      }
+      const source = discoverSources().find(s=>s.root===root);
+      if (!source) return null;
+      const record={source,installed:null,options:null,mounted:null,presets:new Map(),shared:new Map()};
+      records.set(root,record); attachButton(record); return record;
+    }
+    const previewed = new WeakSet();
+    blockEditor=editorBlocks({
+      installed:root=>Boolean(records.get(root)?.installed && records.get(root).installed.galleryHeight!=='custom'),
+      activate(root){
+        const record=recordFor(root);
+        if(!record) return;
+        if(!record.mounted && !apply(record,record.options||settings('arc-tabs',{galleryWidth:'source'},record.source.type)))return;
+        if(editingNativePage() && !previewed.has(record.mounted)){
+          record.mounted.instance.setEditPreview(true); previewed.add(record.mounted); updateEye(true);
+        }else if(!editingNativePage()) previewed.delete(record.mounted);
+      },
+      configure(root){
+        const record=recordFor(root);
+        if(record){open(record);panel?.element.classList.add('gc-editor-panel');}
+      }
+    });
+    cleanups.push(()=>blockEditor.destroy());
+    window.addEventListener('pagehide',()=>blockEditor.destroy(),{once:true});
   }
-  const api={version:1,destroy(){
+  const api={version:1,editorBlocks:true,destroy(){
     close(false);for(const record of records.values())record.mounted?.destroy();
     for(const cleanup of cleanups)cleanup();css?.remove();delete window.GalleryStudioInline;
   }};

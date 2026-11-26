@@ -51,7 +51,7 @@ const lazyDependencies = {
     });
   },
 };
-const pageMarkers = ['data-gallery-configure', 'data-gallery-layout']
+const pageMarkers = ['data-gallery-configure', 'data-gallery-layout', 'data-gallery-editor']
   .map(attribute => `script[type="application/json"][${attribute}]`).join(', ');
 const inlineBuild = await esbuild.build({
   ...common,

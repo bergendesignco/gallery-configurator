@@ -11,3 +11,8 @@ button.gc-edit-eye{position:fixed;bottom:24px;right:24px;z-index:2147483000;disp
 button.gc-edit-eye[hidden]{display:none!important}
 .gc-edit-eye svg{width:20px;height:20px}
 .gc-edit-eye[aria-pressed=true]{background:#2547b3}
+
+/* Release only the opted-in block's intrinsic content height while arranging it. */
+.sqs-edit-mode-active .gc-editor-bound {position:relative!important;height:100%!important;min-height:0!important}
+.sqs-edit-mode-active .gc-editor-bound>.sqs-block-content {position:absolute!important;inset:0;height:auto!important;min-height:0!important;overflow:hidden!important}
+.sqs-edit-mode-active [data-gc-author-panel].gc-editor-panel {display:block!important}
