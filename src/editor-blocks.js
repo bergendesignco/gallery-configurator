@@ -26,7 +26,10 @@ export function editorBlocks({activate, configure, installed}) {
     const root = edit() && selected();
     const bar = root && outer.querySelector('[data-test="block-toolbar"]');
     if (!bar) { button.remove(); return; }
-    const label = root.classList.contains('gc-editor-bound') ? 'Configure carousel' : 'Use as carousel';
+    const enabled = root.classList.contains('gc-editor-bound');
+    const label = enabled ? (configure ? 'Configure carousel' : '✓ Carousel enabled') : 'Use as carousel';
+    button.disabled = enabled && !configure;
+    button.title = button.disabled ? 'Resize this block here. Choose Configure layout after exiting Edit mode.' : '';
     if (button.textContent !== label) button.textContent = label;
     if (button.parentElement !== bar) bar.append(button);
   }
@@ -38,7 +41,7 @@ export function editorBlocks({activate, configure, installed}) {
     const root = selected();
     if (!root) return;
     if (!root.classList.contains('gc-editor-bound')) { drafts.add(root.id); persist(); sync(); }
-    configure(root,button);
+    configure?.(root,button);
   };
   const changes = new MutationObserver(queue);
   changes.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-is-selected']});

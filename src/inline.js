@@ -123,6 +123,7 @@ export function startInline() {
   const records = new Map(sources.map(source => [source.root,{source,installed:null,options:null,mounted:null,presets:new Map(),shared:new Map()}]));
   let panel=null, editing=null, css=null, saving=false, blockEditor=null;
   const cleanups=[];
+  const editModeSettings=false;
   function apply(record, options) {
     if (record.mounted) record.mounted.instance.update({...options,previewScroll:false});
     else record.mounted=embed({selector:record.source.selector,type:record.source.type,options,previewSamples:author});
@@ -144,6 +145,7 @@ export function startInline() {
     else {record.mounted?.destroy();record.mounted=null;record.options=null;}
   }
   function open(record,trigger=record.button) {
+    if (editingNativePage() && !editModeSettings) return;
     if (editing === record) {close();return;}
     close(false);
     const {source}=record;
@@ -285,6 +287,7 @@ export function startInline() {
     document.body.append(eye);
     updateEye();
     const stopEye=listenForEditMode(editing=>{
+      if(editing && !editModeSettings)close(false);
       if(!editing)requestAnimationFrame(()=>{if(eye.isConnected)for(const record of [...records.values()])reconnect(record);});
       updateEye();
     });
@@ -332,6 +335,7 @@ export function startInline() {
         if(!record) return;
         record.source.editorBlockFit=true;
         if(!record.button?.isConnected)attachButton(record);
+        if(!editModeSettings && !record.options && !record.installed)return;
         if(record.mounted && previewed.has(record.mounted) && root.classList.contains('gc-edit-preview') && !record.mounted.host.isConnected){
           record.mounted.destroy();record.mounted=null;
         }
@@ -349,10 +353,10 @@ export function startInline() {
           record.mounted.instance.setEditPreview(true); previewed.add(record.mounted); updateEye(true);
         }else if(!editingNativePage()) previewed.delete(record.mounted);
       },
-      configure(root,trigger){
+      configure:editModeSettings ? (root,trigger)=>{
         const record=recordFor(root);
         if(record){open(record,trigger);panel?.element.classList.add('gc-editor-panel');}
-      }
+      } : null
     });
     cleanups.push(()=>blockEditor.destroy());
     window.addEventListener('pagehide',()=>blockEditor.destroy(),{once:true});
