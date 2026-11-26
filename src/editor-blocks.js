@@ -37,7 +37,7 @@ export function editorBlocks({activate, configure, installed}) {
     event.stopPropagation();
     const root = selected();
     if (!root) return;
-    if (root.classList.contains('gc-editor-bound')) configure(root);
+    if (root.classList.contains('gc-editor-bound')) configure(root,button);
     else { drafts.add(root.id); persist(); sync(); }
   };
   const changes = new MutationObserver(queue);

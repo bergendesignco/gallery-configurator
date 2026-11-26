@@ -132,7 +132,7 @@ export function startInline() {
   function close(focus = true) {
     if (!editing) return;
     const previous=editing;
-    editing=null;panel?.destroy();panel=null;
+    editing=null;panel?.destroy(focus);panel=null;
     previous.button?.setAttribute('aria-expanded','false');
     if (focus) previous.button?.focus({preventScroll:true});
   }
@@ -143,7 +143,7 @@ export function startInline() {
     if (record.installed){apply(record,record.installed);rememberStyle(record,record.installed);}
     else {record.mounted?.destroy();record.mounted=null;record.options=null;}
   }
-  function open(record) {
+  function open(record,trigger=record.button) {
     if (editing === record) {close();return;}
     close(false);
     const {source}=record;
@@ -168,7 +168,7 @@ export function startInline() {
     const change = options => {
       apply(record,options);record.presets.set(options.preset,{...options});
     };
-    panel=createPanel({source,options:{...record.options},onClose:()=>close(),onRestore:()=>restore(record),
+    panel=createPanel({source,trigger,options:{...record.options},onClose:close,onRestore:()=>restore(record),
       onPreset:id=>{
         if (!layouts.has(id)||(source.type!=='list'&&id==='stack')) return;
         record.presets.set(record.options.preset,{...record.options});
@@ -340,9 +340,9 @@ export function startInline() {
           record.mounted.instance.setEditPreview(true); previewed.add(record.mounted); updateEye(true);
         }else if(!editingNativePage()) previewed.delete(record.mounted);
       },
-      configure(root){
+      configure(root,trigger){
         const record=recordFor(root);
-        if(record){open(record);panel?.element.classList.add('gc-editor-panel');}
+        if(record){open(record,trigger);panel?.element.classList.add('gc-editor-panel');}
       }
     });
     cleanups.push(()=>blockEditor.destroy());

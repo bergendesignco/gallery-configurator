@@ -241,7 +241,7 @@ function followEditorViewport(panel) {
 }
 
 /** Mount the author controls beside the currently selected source. */
-export function createPanel({ source, options, onPreset, onOption, onClose, onRestore, onSave, getSaveState, getCode, getStyle, applyStyle }) {
+export function createPanel({ source, options, trigger, onPreset, onOption, onClose, onRestore, onSave, getSaveState, getCode, getStyle, applyStyle }) {
   const previousFocus = document.activeElement;
   let currentSource = source;
   let current = optionsWithDefaults(options);
@@ -585,11 +585,22 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
     }
   }
 
-  function destroy() {
+  const clickDocuments = new Set([document, trigger?.ownerDocument]);
+  if (window.frameElement?.id === 'sqs-site-frame') clickDocuments.add(window.parent.document);
+  function outsideClick(event) {
+    const path = event.composedPath();
+    if (!path.includes(element) && !path.includes(trigger)) onClose(false);
+  }
+  function stopOutsideClicks() {
+    for (const doc of clickDocuments) doc?.removeEventListener('click', outsideClick, true);
+    window.removeEventListener('pagehide', stopOutsideClicks);
+  }
+  function destroy(restoreFocus = true) {
     if (destroyed) return;
     destroyed = true;
     copyAttempt += 1;
-    const returnFocus = document.activeElement === element;
+    const returnFocus = restoreFocus && document.activeElement === element;
+    stopOutsideClicks();
     document.removeEventListener('keydown', escapePanel);
     popupCleanups.splice(0).forEach(clean=>clean());
     stopFollowingViewport();
@@ -735,6 +746,8 @@ export function createPanel({ source, options, onPreset, onOption, onClose, onRe
       status.textContent = 'Code selected. Choose Copy.';
     }
   });
+  for (const doc of clickDocuments) doc?.addEventListener('click', outsideClick, true);
+  window.addEventListener('pagehide', stopOutsideClicks);
   document.addEventListener('keydown', escapePanel);
   update({ source, options });
   presetSelect.focus({ preventScroll: true });
